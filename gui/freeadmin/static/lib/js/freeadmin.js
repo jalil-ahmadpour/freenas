@@ -1812,7 +1812,7 @@ require([
             }
         });
         registry.byId("menupane").set('content', mytree);
-        if(wizardUrl) editObject(gettext("Initial Wizard"), wizardUrl, []);
+        if(wizardShow) editObject(gettext("Initial Wizard"), wizardUrl, []);
 
     });
 });
