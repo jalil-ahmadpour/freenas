@@ -2,7 +2,7 @@
 .include "build/hooks/Makefile"
 .endif
 
-NANO_LABEL?=FreeNAS
+NANO_LABEL?=SadrNAS
 VERSION?=9.3-ALPHA
 BUILD_TIMESTAMP!=date '+%Y%m%d'
 COMPANY?="iXsystems"
