@@ -192,12 +192,12 @@ define([
       });
 
       me._storeUsers = new ItemFileReadStore({
-        url: "/account/bsduser/json/"
+        url: "/account/bsduser/json/?wizard=1"
       });
       me._storeUsers.fetch();
 
       me._storeGroups = new ItemFileReadStore({
-        url: "/account/bsdgroup/json/"
+        url: "/account/bsdgroup/json/?wizard=1"
       });
       me._storeGroups.fetch();
 
@@ -210,6 +210,7 @@ define([
         invalidMessage: gettext('This user does not exist.'),
         validator: function(value, constraints) {
           var found;
+          value = value.replace("\\", "\\\\");
           me._storeUsers.fetch({query: {id: value}, onComplete: function(results) {
             if(results.length > 0) {
             found = true;
@@ -271,6 +272,7 @@ define([
         invalidMessage: gettext('This group does not exist.'),
         validator: function(value, constraints) {
           var found;
+          value = value.replace("\\", "\\\\");
           me._storeGroups.fetch({query: {id: value}, onComplete: function(results) {
             if(results.length > 0) {
             found = true;

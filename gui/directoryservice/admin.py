@@ -61,15 +61,17 @@ class LDAPFAdmin(BaseFreeAdmin):
 
 class NISFAdmin(BaseFreeAdmin):
     create_modelform = "NISForm"
+    deletable = False
     edit_modelform = "NISForm"
     icon_object = u"NISIcon"
     icon_model = u"NISIcon"
     icon_add = u"NISIcon"
     icon_view = u"NISIcon"
- 
+
 
 class NT4FAdmin(BaseFreeAdmin):
     create_modelform = "NT4Form"
+    deletable = False
     edit_modelform = "NT4Form"
     icon_object = u"NT4Icon"
     icon_model = u"NT4Icon"

@@ -66,12 +66,24 @@ def directoryservice_home(request):
     except:
         nt4 = models.NT4()
 
+    try:
+        kerberoskeytab = models.KerberosKeytab.objects.order_by("-id")[0]
+    except:
+        kerberoskeytab = models.KerberosKeytab()
+
+    try:
+        kerberosrealm = models.KerberosRealm.objects.order_by("-id")[0]
+    except:
+        kerberosrealm = models.KerberosRealm()
+
     return render(request, 'directoryservice/index.html', {
         'focus_form': request.GET.get('tab', 'directoryservice'),
         'activedirectory': activedirectory,
-        'ldap': ldap, 
-        'nis': nis, 
-        'nt4': nt4
+        'ldap': ldap,
+        'nis': nis,
+        'nt4': nt4,
+        'kerberoskeytab': kerberoskeytab,
+        'kerberosrealm':  kerberosrealm
     })
 
 
@@ -122,58 +134,6 @@ def directoryservice_ldap(request):
 
     return render(request, 'directoryservice/ldap.html', {
         'ldap': ldap,
-        'form': form,
-        'inline': True
-    })
-
-
-def directoryservice_nt4(request):
-    try:
-        nt4 = models.NT4.objects.order_by("-id")[0]
-    except:
-        nt4 = models.NT4()
-
-    if request.method == "POST":
-        form = forms.NT4Form(request.POST, instance=nt4)
-        if form.is_valid(): 
-            form.save()
-            return JsonResp(
-                request,
-                message="NT4 successfully edited."
-            )
-        else:
-            return JsonResp(request, form=form)
-    else:
-        form = forms.NT4Form(instance=nt4)
-
-    return render(request, 'directoryservice/nt4.html', {
-        'nt4': nt4,
-        'form': form,
-        'inline': True
-    })
-
-
-def directoryservice_nis(request):
-    try:
-        nis = models.NT4.objects.order_by("-id")[0]
-    except:
-        nis = models.NT4()
-
-    if request.method == "POST":
-        form = forms.NISForm(request.POST, instance=nis)
-        if form.is_valid(): 
-            form.save()
-            return JsonResp(
-                request,
-                message="NIS successfully edited."
-            )
-        else:
-            return JsonResp(request, form=form)
-    else:
-        form = forms.NISForm(instance=nis)
-
-    return render(request, 'directoryservice/nis.html', {
-        'nis': nis,
         'form': form,
         'inline': True
     })
