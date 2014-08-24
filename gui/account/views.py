@@ -35,6 +35,10 @@ from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.contrib.auth.forms import AuthenticationForm
 
 from freenasUI.account import forms, models
+from freenasUI.common.freenascache import (
+    FLAGS_CACHE_READ_USER, FLAGS_CACHE_WRITE_USER, FLAGS_CACHE_READ_GROUP,
+    FLAGS_CACHE_WRITE_GROUP
+)
 from freenasUI.common.freenasldap import (
     FLAGS_DBINIT,
     FreeNAS_ActiveDirectory_Groups,
@@ -42,9 +46,9 @@ from freenasUI.common.freenasldap import (
     FreeNAS_LDAP_Groups,
     FreeNAS_LDAP_Users,
 )
-from freenasUI.common.freenascache import (
-    FLAGS_CACHE_READ_USER, FLAGS_CACHE_WRITE_USER, FLAGS_CACHE_READ_GROUP,
-    FLAGS_CACHE_WRITE_GROUP
+from freenasUI.common.freenasnis import (
+    FreeNAS_NIS_Groups,
+    FreeNAS_NIS_Users,
 )
 from freenasUI.common.freenasusers import FreeNAS_Users, FreeNAS_Groups
 from freenasUI.common.system import get_sw_login_version, get_sw_name
@@ -144,6 +148,14 @@ def json_users(request, exclude=None):
                 bindpw=wizard_ds.get('ds_ldap_bindpw'),
                 flags=FLAGS_DBINIT,
             )
+        elif wizard_ds.get('ds_type') == 'nis':
+            users = FreeNAS_NIS_Users(
+                domain=wizard_ds.get('ds_nis_domain'),
+                servers=wizard_ds.get('ds_nis_servers'),
+                secure_mode=wizard_ds.get('ds_nis_secure_mode'),
+                manycast=wizard_ds.get('ds_nis_manycast'),
+                flags=FLAGS_DBINIT,
+            )
         else:
             users = None
 
@@ -158,11 +170,16 @@ def json_users(request, exclude=None):
                     user not in exclude
                 ):
                     json_user['items'].append({
-                        'id': user,
+                        'id': '%s_%s' % (
+                            wizard_ds.get('ds_type'),
+                            user,
+                        ),
                         'name': user,
                         'label': user,
                     })
                     idx += 1
+
+            del users
 
     return HttpResponse(
         json.dumps(json_user, indent=3),
@@ -212,6 +229,14 @@ def json_groups(request):
                 bindpw=wizard_ds.get('ds_ldap_bindpw'),
                 flags=FLAGS_DBINIT,
             )
+        elif wizard_ds.get('ds_type') == 'nis':
+            groups = FreeNAS_NIS_Groups(
+                domain=wizard_ds.get('ds_nis_domain'),
+                servers=wizard_ds.get('ds_nis_servers'),
+                secure_mode=wizard_ds.get('ds_nis_secure_mode'),
+                manycast=wizard_ds.get('ds_nis_manycast'),
+                flags=FLAGS_DBINIT,
+            )
         else:
             groups = None
 
@@ -223,11 +248,16 @@ def json_groups(request):
                     break
                 if query is None or group.startswith(query):
                     json_group['items'].append({
-                        'id': group,
+                        'id': '%s_%s' % (
+                            wizard_ds.get('ds_type'),
+                            group,
+                        ),
                         'name': group,
                         'label': group,
                     })
                     idx += 1
+
+            del groups
 
     return HttpResponse(
         json.dumps(json_group, indent=3),

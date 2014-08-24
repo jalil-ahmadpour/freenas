@@ -1708,3 +1708,52 @@ class DomainController(Model):
     class FreeAdmin:
         deletable = False
         icon_model = u"DomainControllerIcon"
+
+class WebDAV(Model):
+    webdav_protocol = models.CharField(
+            max_length=120,
+            choices=choices.PROTOCOL_CHOICES,
+            default="http",
+            verbose_name=_("Protocol")
+        )
+    
+    webdav_tcpport = models.PositiveIntegerField(
+	    verbose_name=_("HTTP Port"),
+	    default=8080,
+	    validators=[MinValueValidator(1),MaxValueValidator(65535)],
+	    help_text=_("This is the port at which WebDAV will run on."
+			"<br />Do not use a port that is already in use by another service (e.g. 22 for SSH)."),
+	)
+    
+    webdav_tcpportssl =  models.PositiveIntegerField(
+	    verbose_name=_("HTTPS Port"),
+	    default=8081,
+	    validators=[MinValueValidator(1),MaxValueValidator(65535)],
+	    help_text=_("This is the port at which Secure WebDAV will run on."
+			"<br />Do not use a port that is already in use by another service (e.g. 22 for SSH)."),
+	)
+    
+    webdav_password = models.CharField(
+            max_length=120,
+            verbose_name=_("Webdav Password"),
+            default="davtest",
+            help_text=_("The Default Password is: davtest"),
+        )
+    
+    webdav_htauth = models.CharField(
+            max_length=120,
+            verbose_name=_("HTTP Authentication"),
+            choices=choices.HTAUTH_CHOICES,
+            default='digest',
+            help_text=_("Type of HTTP Authentication for WebDAV"
+			"<br />Basic Auth: Password is sent over the network as plaintext (Avoid if HTTPS is disabled)"
+			"<br />Digest Auth: Hash of the password is sent over the network (more secure)")
+        )
+
+    class Meta:
+	verbose_name = _(u"WebDAV")
+	verbose_name_plural = _(u"WebDAV")
+
+    class FreeAdmin:
+	deletable = False
+        icon_model = u"WebDAVShareIcon"
