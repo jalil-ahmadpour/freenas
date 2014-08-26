@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 #+
 # Copyright 2012 iXsystems, Inc.
 # All rights reserved
@@ -117,7 +120,15 @@ class RRDBase(object):
             "/usr/local/bin/rrdtool",
             "graph",
             path,
-            '--imgformat', self.imgformat,
+			'--watermark','سپاه پاسداران انقلاب اسلامي-مركز تحقيقات صدر',
+			#'--font','DEFAULT:0:Tahoma',
+            '--color','BACK#E8F5FD',
+			'--color','SHADEA#8ACAFD',
+			'--color','SHADEB#2C539E',
+			#'--full-size-mode',
+            #'--width=647',   
+			#'--height=400',   
+			'--imgformat', self.imgformat,
             '--vertical-label', str(self.get_vertical_label()),
             '--title', str(self.get_title()),
             '--lower-limit', '0',
@@ -128,23 +139,17 @@ class RRDBase(object):
         # rrdtool python is suffering from some sort of threading locking issue
         # See #3478
         # rrdtool.graph(*args)
-        proc = subprocess.Popen(
-            args,
-            stdout=subprocess.PIPE,
-            stdin=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        err = proc.communicate()[1]
-        if proc.returncode != 0:
-            log.error("Failed to generate graph: %s", err)
+        subprocess.Popen(
+            args, stdout=subprocess.PIPE, stdin=subprocess.PIPE
+        ).communicate()
         return fh, path
 
 
 class CPUPlugin(RRDBase):
 
     plugin = "aggregation-cpu-sum"
-    title = "CPU Usage"
-    vertical_label = "%CPU"
+    title = "مصرف پردازنده"
+    vertical_label = "%پردازنده"
 
     def graph(self):
         cpu_idle = os.path.join(self.base_path, "cpu-idle.rrd")
@@ -229,10 +234,10 @@ class CPUPlugin(RRDBase):
 
 class InterfacePlugin(RRDBase):
 
-    vertical_label = "Bits per second"
+    vertical_label = "بيت بر ثانيه"
 
     def get_title(self):
-        return 'Interface Traffic (%s)' % self.identifier
+        return 'ترافيك اينترفيس (%s)' % self.identifier
 
     def get_identifiers(self):
         ids = []
@@ -242,7 +247,7 @@ class InterfacePlugin(RRDBase):
             ident = entry.rsplit('-', 1)[-1]
             if ident not in ifaces:
                 continue
-            if re.match(r'(usbus|pfsync|pflog|carp)', ident):
+            if re.match("usbus", ident):
                 continue
             if os.path.exists(os.path.join(entry, 'if_octets.rrd')):
                 ids.append(ident)
@@ -297,8 +302,8 @@ class InterfacePlugin(RRDBase):
 
 class MemoryPlugin(RRDBase):
 
-    title = "Physical memory utilization"
-    vertical_label = "Bytes"
+    title = "بهره وري حافظه فيزيكي"
+    vertical_label = "بايت"
 
     def graph(self):
 
@@ -366,8 +371,8 @@ class MemoryPlugin(RRDBase):
 
 class LoadPlugin(RRDBase):
 
-    title = "System Load"
-    vertical_label = "System Load"
+    title = "بار سيستم"
+    vertical_label = "بار سيستم"
 
     def graph(self):
 
@@ -407,8 +412,8 @@ class LoadPlugin(RRDBase):
 
 class ProcessesPlugin(RRDBase):
 
-    title = "Processes"
-    vertical_label = "Processes"
+    title = "پروسه ها"
+    vertical_label = "پروسه ها"
 
     def graph(self):
 
@@ -498,8 +503,8 @@ class ProcessesPlugin(RRDBase):
 
 class SwapPlugin(RRDBase):
 
-    title = "Swap Utilization"
-    vertical_label = "Bytes"
+    title = "بهره وري سواپ"
+    vertical_label = "بايت"
 
     def graph(self):
 
@@ -534,7 +539,7 @@ class SwapPlugin(RRDBase):
 
 class DFPlugin(RRDBase):
 
-    vertical_label = "Bytes"
+    vertical_label = "بايت"
 
     def _get_mountpoints(self):
         mps = []
@@ -545,7 +550,7 @@ class DFPlugin(RRDBase):
 
     def get_title(self):
         title = self.identifier.replace("mnt-", "")
-        return 'Diskspace (%s)' % title
+        return 'فضاي ديسك (%s)' % title
 
     def get_identifiers(self):
 
@@ -594,8 +599,8 @@ class DFPlugin(RRDBase):
 
 class UptimePlugin(RRDBase):
 
-    title = "Uptime"
-    vertical_label = "Time"
+    title = "زمان روشن بودن"
+    vertical_label = "زمان"
 
     def graph(self):
 
@@ -724,11 +729,11 @@ class UptimePlugin(RRDBase):
 
 class DiskPlugin(RRDBase):
 
-    vertical_label = "Bytes/s"
+    vertical_label = "بايت بر ثانيه"
 
     def get_title(self):
         title = self.identifier.replace("disk-", "")
-        return 'Disk I/O (%s)' % title
+        return 'ورودي/خروجي ديسك (%s)' % title
 
     def get_identifiers(self):
         ids = []

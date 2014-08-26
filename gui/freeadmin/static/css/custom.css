@@ -43,10 +43,6 @@ a:hover {
     padding-bottom:2px !important;
     font-size: 7pt;
 }
-.claro .dijitDialogCloseIcon {
-    float: right;
-    position: static;
-}
 /* system->settings->config */
 .configbtn {
     float:left;
@@ -60,7 +56,7 @@ a:hover {
 #rebootDialog_underlay {
     background-color:#000;
 }
-#shutdownDialog_underlay,#editscary_dialog_underlay,#editconfirmscary_dialog_underlay {
+#shutdownDialog_underlay,#editscary_dialog_underlay {
     background-color:#FD0000;
 }
 #top_dialog_underlay {
@@ -169,14 +165,17 @@ pre.message {
     opacity:0.6;
     filter:alpha(opacity=18);
 }
-.error p {
-    padding-top:18px;
-    color:#fff;
-}
+
 .success p {
     padding-top:18px;
     color:#fff;
 }
+
+.error p {
+    padding-top:18px;
+    color:#fff;
+}
+
 .dijitTooltipContainer {
     max-width:250px;
     margin-top:10px;
@@ -304,7 +303,7 @@ tr.odd:hover {
     padding-left:0px;
     text-decoration:bold;
 }
-table.form tbody > tr > th {
+table.form th {
     color:#50575F;
     background:#f5f5f5;
     padding:6px;
@@ -327,775 +326,727 @@ table.grid tr {
     border-bottom:1px #ccc solid;
 }
 
-.EmailIcon {
-    background-image:url('/static/images/ui/tree/email.png');
-    width:16px;
-    height:16px;
-}
-.LLDPIcon {
-    background-image:url('/static/images/ui/tree/lldp.png');
-    width:16px;
-    height:16px;
-}
-.SysDatasetIcon {
-    background-image:url('/static/images/ui/tree/sysdataset.png');
-    width:16px;
-    height:16px;
-}
 .SystemIcon {
     background-image:url('/static/images/ui/tree/system.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .ReportingIcon {
     background-image:url('/static/images/ui/tree/reporting.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .InfoIcon {
     background-image:url('/static/images/ui/tree/system_information.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .SettingsIcon {
     background-image:url('/static/images/ui/tree/settings.png');
-    width:16px;
-    height:16px;
-}
-.TasksIcon {
-    background-image:url('/static/images/ui/tree/tasks.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .RebootIcon {
     background-image:url('/static/images/ui/tree/reboot.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .ShutdownIcon {
     background-image:url('/static/images/ui/tree/shutdown.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .AccountIcon {
     background-image:url('/static/images/ui/tree/account.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .NetworkIcon {
     background-image:url('/static/images/ui/tree/network.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .InterfacesIcon {
     background-image:url('/static/images/ui/tree/interfaces.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .AddInterfaceIcon {
     background-image:url('/static/images/ui/tree/add_interfaces.png');
-    width:16px;
-    height:16px;
-}
-.UpgradeIcon {
-    background-image:url('/static/images/ui/tree/upgrade.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .ViewAllInterfacesIcon {
     background-image:url('/static/images/ui/tree/view_all_interfaces.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .VLANIcon {
     background-image:url('/static/images/ui/tree/vlan.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .AddVLANIcon {
     background-image:url('/static/images/ui/tree/add_vlan.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .ViewAllVLANsIcon {
     background-image:url('/static/images/ui/tree/view_all_vlans.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .LAGGIcon {
     background-image:url('/static/images/ui/tree/lagg.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .AddLAGGIcon {
     background-image:url('/static/images/ui/tree/add_lagg.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .ViewAllLAGGsIcon {
     background-image:url('/static/images/ui/tree/view_all_laggs.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .StaticRouteIcon {
     background-image:url('/static/images/ui/tree/static_routes.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .AddStaticRouteIcon {
     background-image:url('/static/images/ui/tree/add_static_route.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .ViewAllStaticRoutesIcon {
     background-image:url('/static/images/ui/tree/view_all_static_routes.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .AddInterfaceIcon {
     background-image:url('/static/images/ui/tree/add_interfaces.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .ViewAllInterfacesIcon {
     background-image:url('/static/images/ui/tree/view_all_interfaces.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .StorageIcon {
     background-image:url('/static/images/ui/tree/storage.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .SharingIcon {
     background-image:url('/static/images/ui/tree/sharing.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .ServicesIcon {
     background-image:url('/static/images/ui/tree/services.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .iSCSIIcon {
     background-image:url('/static/images/ui/tree/iscsi.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .SNMPIcon {
     background-image:url('/static/images/ui/tree/snmp.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .DDNSIcon {
     background-image:url('/static/images/ui/tree/dynamic_dns.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .OpenSSHIcon {
     background-image:url('/static/images/ui/tree/open_ssh.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .FTPIcon {
     background-image:url('/static/images/ui/tree/ftp.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .TFTPIcon {
     background-image:url('/static/images/ui/tree/tftp.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .DirectoryServiceIcon {
     background-image:url('/static/images/ui/tree/directory_service.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .DomainControllerIcon {
     background-image:url('/static/images/ui/tree/domain_controller.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .ActiveDirectoryIcon {
     background-image:url('/static/images/ui/tree/active_directory.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .NT4Icon {
     background-image:url('/static/images/ui/tree/nt4.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .NISIcon {
     background-image:url('/static/images/ui/tree/nis.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .LDAPIcon {
     background-image:url('/static/images/ui/tree/ldap.png');
-    width:16px;
-    height:16px;
-}
-.KerberosRealmIcon {
-    background-image:url('/static/images/ui/tree/kerberos_realm.png');
-    width:16px;
-    height:16px;
-}
-.KerberosKeytabIcon {
-    background-image:url('/static/images/ui/tree/kerberos_keytab.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .UPSIcon {
     background-image:url('/static/images/ui/tree/ups.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .StaticRoutesIcon {
     background-image:url('/static/images/ui/tree/static_routes.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .TopIcon {
     background-image:url('/static/images/ui/tree/display_system_processes.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .AdminAccountIcon {
     background-image:url('/static/images/ui/tree/nfs.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .ChangeAdminIcon {
     background-image:url('/static/images/ui/tree/change_admin_user.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .ChangePasswordIcon {
     background-image:url('/static/images/ui/tree/change_password.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .LogOutIcon {
     background-image:url('/static/images/ui/tree/logout.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .GroupsIcon {
     background-image:url('/static/images/ui/tree/groups.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .AddGroupIcon {
     background-image:url('/static/images/ui/tree/add_groups.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .GroupIcon {
     background-image:url('/static/images/ui/tree/group.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .ViewAllGroupsIcon {
     background-image:url('/static/images/ui/tree/view_all_groups.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .UsersIcon {
     background-image:url('/static/images/ui/tree/users.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .ViewAllUsersIcon {
     background-image:url('/static/images/ui/tree/view_all_users.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .AddUserIcon {
     background-image:url('/static/images/ui/tree/add_users.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .UserIcon {
     background-image:url('/static/images/ui/tree/user.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .ViewUsersIcon {
     background-image:url('/static/images/ui/tree/view_all_users.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .VolumesIcon {
     background-image:url('/static/images/ui/tree/volumes.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .AddVolumeIcon {
     background-image:url('/static/images/ui/tree/add_volume.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .ViewAllVolumesIcon {
     background-image:url('/static/images/ui/tree/view_all_volumes.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .AddShareIcon {
     background-image:url('/static/images/ui/tree/add_share.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .AFPIcon {
     background-image:url('/static/images/ui/tree/apple_shares.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .AppleShareIcon {
     background-image:url('/static/images/ui/tree/apple_shares.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .AddAppleShareIcon {
     background-image:url('/static/images/ui/tree/add_apple_share.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .ViewAllAppleSharesIcon {
     background-image:url('/static/images/ui/tree/view_all_apple_shares.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .CIFSIcon {
     background-image:url('/static/images/ui/tree/windows_shares.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .WindowsShareIcon {
     background-image:url('/static/images/ui/tree/windows_shares.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .AddWindowsShareIcon {
     background-image:url('/static/images/ui/tree/add_windows_share.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .ViewAllWindowsSharesIcon {
     background-image:url('/static/images/ui/tree/view_all_windows_shares.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .NFSIcon {
     background-image:url('/static/images/ui/tree/nfs.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .UNIXShareIcon {
     background-image:url('/static/images/ui/tree/nfs.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .AddUNIXShareIcon {
     background-image:url('/static/images/ui/tree/add_unix_share.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .ViewAllUNIXSharesIcon {
     background-image:url('/static/images/ui/tree/view_all_unix_shares.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
-
-.WebDAVShareIcon {
-    background-image:url('/static/images/ui/tree/webdav.png');
-    width:16px;
-    height:16px;
-}
-
-.AddWebDAVShareIcon {
-    background-image:url('/static/images/ui/tree/add_webdav_share.png');
-    width:16px;
-    height:16px;
-}
-
-.ViewAllWebDAVSharesIcon {
-    background-image:url('/static/images/ui/tree/view_all_webdav_shares.png');
-    width:16px;
-    height:16px;
-}
-
 .TargetExtentIcon {
     background-image:url('/static/images/ui/tree/target_extents.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .AddTargetExtentIcon {
     background-image:url('/static/images/ui/tree/add_target_extents.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .ViewAllTargetExtentsIcon {
     background-image:url('/static/images/ui/tree/view_all_target_extents.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .TargetIcon {
     background-image:url('/static/images/ui/tree/targets.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .AddTargetIcon {
     background-image:url('/static/images/ui/tree/add_target.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .ViewAllTargetsIcon {
     background-image:url('/static/images/ui/tree/view_all_targets.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .ExtentIcon {
     background-image:url('/static/images/ui/tree/extents.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .AddExtentIcon {
     background-image:url('/static/images/ui/tree/add_extents.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .ViewAllExtentsIcon {
     background-image:url('/static/images/ui/tree/view_all_extents.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .InitiatorIcon {
     background-image:url('/static/images/ui/tree/initiators.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .AddInitiatorIcon {
     background-image:url('/static/images/ui/tree/add_initiator.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .ViewAllInitiatorsIcon {
     background-image:url('/static/images/ui/tree/view_all_initiators.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .PortalIcon {
     background-image:url('/static/images/ui/tree/portals.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .AddPortalIcon {
     background-image:url('/static/images/ui/tree/add_portals.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .ViewAllPortalsIcon {
     background-image:url('/static/images/ui/tree/view_all_portals.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .AuthorizedAccessIcon {
     background-image:url('/static/images/ui/tree/authorized_access.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .AddAuthorizedAccessIcon {
     background-image:url('/static/images/ui/tree/add_authorized_access.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .ViewAllAuthorizedAccessIcon {
     background-image:url('/static/images/ui/tree/view_all_authorized_access.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .AddDatasetIcon {
     background-image:url('/static/images/ui/tree/add_dataset.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .AddZFSVolumeIcon {
     background-image:url('/static/images/ui/tree/add_zfs_volume.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .ImportVolumeIcon {
     background-image:url('/static/images/ui/tree/import_volume.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .ImportVolumeIcon {
     background-image:url('/static/images/ui/tree/import_volume.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .CreatePeriodicSnapIcon {
     background-image:url('/static/images/ui/tree/create_periodic_snapshot.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .ViewAllPeriodicSnapIcon {
     background-image:url('/static/images/ui/tree/view_all_periodic_snapshots.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .SnapIcon {
     background-image:url('/static/images/ui/tree/snapshots.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .AddReplIcon {
     background-image:url('/static/images/ui/tree/add_replication.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .ReplIcon {
     background-image:url('/static/images/ui/tree/replication.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .ViewAllReplIcon {
     background-image:url('/static/images/ui/tree/view_all_replication.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .cronJobIcon {
     background-image:url('/static/images/ui/tree/cron.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .AddcronJobIcon {
     background-image:url('/static/images/ui/tree/add_cron_job.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .ViewcronJobIcon {
     background-image:url('/static/images/ui/tree/view_cron_jobs.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .SMARTIcon {
     background-image:url('/static/images/ui/tree/smart.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .AddSMARTTestIcon {
     background-image:url('/static/images/ui/tree/add_smart_test.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .ViewSMARTTestIcon {
     background-image:url('/static/images/ui/tree/view_smart_tests.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .rsyncIcon {
     background-image:url('/static/images/ui/tree/rsync.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .rsyncdIcon {
     background-image:url('/static/images/ui/tree/settings.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .rsyncModIcon {
     background-image:url('/static/images/ui/tree/rsync_modules.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .AddrsyncTaskIcon {
     background-image:url('/static/images/ui/tree/add_rsync_task.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .ViewrsyncTaskIcon {
     background-image:url('/static/images/ui/tree/view_rsync_tasks.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .AddrsyncModIcon {
     background-image:url('/static/images/ui/tree/add_rsync_module.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .ViewAllrsyncModIcon {
     background-image:url('/static/images/ui/tree/view_rsync_modules.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .TunableIcon {
-    background-image:url('/static/images/ui/tree/Tunable_16x16px.png');
-    width:16px;
-    height:16px;
+    background-image:url('/static/images/ui/tree/Tunable.png');
+    width:32px;
+    height:32px;
 }
 .AddTunableIcon {
     background-image:url('/static/images/ui/tree/add_tunables.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .ViewTunableIcon {
     background-image:url('/static/images/ui/tree/view_tunables.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .NTPServerIcon {
-    background-image:url('/static/images/ui/tree/NTP_Servers_16x16px.png');
-    width:16px;
-    height:16px;
+    background-image:url('/static/images/ui/tree/NTP_Servers.png');
+    width:32px;
+    height:32px;
 }
 .AddNTPServerIcon {
     background-image:url('/static/images/ui/tree/add_ntp_servers.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .ViewNTPServerIcon {
     background-image:url('/static/images/ui/tree/view_ntp_servers.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
+}
+.SysctlIcon {
+    background-image:url('/static/images/ui/tree/sysctls.png');
+    width:32px;
+    height:32px;
+}
+.AddSysctlIcon {
+    background-image:url('/static/images/ui/tree/add_sysctls.png');
+    width:32px;
+    height:32px;
+}
+.ViewSysctlIcon {
+    background-image:url('/static/images/ui/tree/view_sysctls.png');
+    width:32px;
+    height:32px;
 }
 .MountPointIcon {
     background-image:url('/static/images/ui/tree/mountpoints.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .AddMountPointIcon {
     background-image:url('/static/images/ui/tree/add_mountpoints.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .ViewMountPointIcon {
     background-image:url('/static/images/ui/tree/view_mountpoints.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .ShellIcon {
-    background-image:url('/static/images/ui/tree/16x16_shell.png');
-    width:16px;
-    height:16px;
+    background-image:url('/static/images/ui/tree/shell.png');
+    width:32px;
+    height:32px;
 }
 .PluginIcon {
     background-image:url('/static/images/ui/tree/16x16_plugin.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .JailDeleteIcon {
     background-image:url('/static/images/ui/tree/jail_delete.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .JailExportIcon {
     background-image:url('/static/images/ui/tree/jail_export.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .JailImportIcon {
     background-image:url('/static/images/ui/tree/jail_import.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .PluginInstallIcon {
     background-image:url('/static/images/ui/tree/plugin_install.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .JailIcon {
     background-image:url('/static/images/ui/tree/jail.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .LinuxJailIcon {
     background-image:url('/static/images/ui/tree/linuxjail.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .JailMkdirIcon {
     background-image:url('/static/images/ui/tree/jail_mkdir.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .JailStorageIcon {
     background-image:url('/static/images/ui/tree/jail_storage.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .JailPluginIcon {
     background-image:url('/static/images/ui/tree/jail_plugin.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .PluginJailIcon {
     background-image:url('/static/images/ui/tree/pluginjail.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .StandardJailIcon {
     background-image:url('/static/images/ui/tree/standardjail.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .PortJailIcon {
     background-image:url('/static/images/ui/tree/portjail.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .JailStartIcon {
     background-image:url('/static/images/ui/tree/jail_start.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .JailStopIcon {
     background-image:url('/static/images/ui/tree/jail_stop.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .JailAddIcon {
     background-image:url('/static/images/ui/tree/jail_add.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .JailEditIcon {
     background-image:url('/static/images/ui/tree/jail_edit.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .BeastieIcon {
     background-image:url('/static/images/ui/tree/beastie.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .BobbleIcon {
     background-image:url('/static/images/ui/tree/bobble.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .TuxIcon {
     background-image:url('/static/images/ui/tree/tux.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .SupportIcon {
     background-image:url('/static/images/ui/tree/support.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
-.SystemDatasetIcon {
-    background-image:url('/static/images/ui/tree/system_dataset.png');
-    width:16px;
-    height:16px;
-}
-.WizardIcon {
-    background-image:url('/static/images/ui/tree/wizard.png');
-    width:16px;
-    height:16px;
-}
+
 .dijitTextArea {
     min-height:60px;
 }
@@ -1253,7 +1204,6 @@ span.shell_bf {
 /* Negative bg */
 #msg_output {
     display:none;
-    word-wrap: break-word;
 }
 #navMenu {
     position:relative;
@@ -1388,8 +1338,4 @@ table.layoutTable > tr:first-child > td {
 }
 #dgrid_apiclient .dgrid-column-name {
     width: 140px;
-}
-
-.dgrid-wizardshare {
-    height: 100px !important;
 }

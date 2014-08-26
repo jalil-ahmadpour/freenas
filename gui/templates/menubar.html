@@ -1,22 +1,10 @@
 <div data-dojo-type="dijit.MenuBar" id="navMenu">
   {% if user.is_authenticated %}
 
-  <div id="menuBar_Account" data-dojo-type="dijit.MenuBarItem" onClick="Menu.openAccount();" class="menu_icon">
-    <img src="{{ STATIC_URL }}images/ui/menu/account.png" />
-    <br />
-    <span>{% trans "Account" %}</span>
-  </div>
-
   <div id="menuBar_System" data-dojo-type="dijit.MenuBarItem" onClick="Menu.openSystem();" class="menu_icon">
     <img src="{{ STATIC_URL }}images/ui/menu/system.png" />
     <br />
     <span>{% trans "System" %}</span>
-  </div>
-
-  <div id="menuBar_Tasks" data-dojo-type="dijit.MenuBarItem" onClick="Menu.openTasks();" class="menu_icon">
-    <img src="{{ STATIC_URL }}images/ui/menu/tasks.png" />
-    <br />
-    <span>{% trans "Tasks" %}</span>
   </div>
 
   <div id="menuBar_Network" data-dojo-type="dijit.MenuBarItem" onClick="Menu.openNetwork();" class="menu_icon">
@@ -31,13 +19,6 @@
     <span>{% trans "Storage" %}</span>
   </div>
 
-  <div id="menuBar_DirectoryService" data-dojo-type="dijit.MenuBarItem" onClick="Menu.openDirectoryService();" class="menu_icon">
-    <img src="{{ STATIC_URL }}images/ui/menu/directoryservice.png" />
-    <br />
-    <span>{% trans "Directory" %}</span>
-    <!-- span>{% trans "Directory Service" %}</span -->
-  </div>
-
   <div id="menuBar_Sharing" data-dojo-type="dijit.MenuBarItem" onClick="Menu.openSharing();" class="menu_icon">
     <img src="{{ STATIC_URL }}images/ui/menu/sharing.png" />
     <br />
@@ -50,6 +31,7 @@
     <span>{% trans "Services" %}</span>
   </div>
 
+  <!-- disable Plugins and jail Menus Items	
   {% for menu in menu_hook %}
   <div id="{% if menu.id %}{{ menu.id }}{% else %}menuBar_{{ forloop.counter }}{% endif %}" data-dojo-type="dijit.MenuBarItem" onClick="{{ menu.onclick }}" class="menu_icon{% if menu.align %} {{ menu.align }}{% endif %}">
     {% if menu.img %}
@@ -61,22 +43,29 @@
     <span>{{ menu.name|safe }}</span>
   </div>
   {% endfor %}
-
-  <div id="menuBar_Wizard" data-dojo-type="dijit.MenuBarItem" onClick="editObject('{% trans "Wizard"|escapejs %}', wizardUrl, []);" class="menu_icon">
-    <img src="{{ STATIC_URL }}images/ui/menu/wizard.png" />
-    <br />
-    <span>{% trans "Wizard" %}</span>
-  </div>
-
-  <div id="meuBar_Alert" data-dojo-type="dijit.MenuBarItem" class="menu_icon right" onClick="alert_open();">
+  -->
+  <div id="meuBar_Alert" data-dojo-type="dijit.MenuBarItem" class="menu_icon left" onClick="alert_open();">
     <div data-dojo-type="dijit.layout.ContentPane" id="alert_status" class="alert_ok"></div>
     <span>{% trans "Alert" %}</span>
   </div>
 
-  <div id="menuBar_Help" data-dojo-type="dijit.MenuBarItem" onClick="dijit.byId('helpDialog').show();" class="menu_icon right">
+  <div id="menuBar_Logout" data-dojo-type="dijit.MenuBarItem" onClick="window.location='/account/logout/'" class="menu_icon left">
+    <img src="{{ STATIC_URL }}images/ui/menu/logout.png" />
+    <br />
+    <span>{% trans "Log Out" %}</span>
+  </div>
+
+  <!--<div id="menuBar_Help" data-dojo-type="dijit.MenuBarItem" onClick="dijit.byId('helpDialog').show();" class="menu_icon left">
     <img src="{{ STATIC_URL }}images/ui/menu/help.png" />
     <br />
     <span>{% trans "Help" %}</span>
+  </div>
+  -->
+  
+  <div id="menuBar_Account" data-dojo-type="dijit.MenuBarItem" onClick="Menu.openAccount();" class="menu_icon left">
+    <img src="{{ STATIC_URL }}images/ui/menu/account.png" />
+    <br />
+    <span>{% trans "Account" %}</span>
   </div>
 
   {% else %}
