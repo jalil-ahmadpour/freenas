@@ -1402,6 +1402,14 @@ class InitialWizardDSForm(Form):
             self.jsChange
         )
 
+    @classmethod
+    def show_condition(cls, wizard):
+        ad = ActiveDirectory.objects.all().filter(ad_enable=True).exists()
+        ldap = LDAP.objects.all().filter(ldap_enable=True).exists()
+        nt4 = NT4.objects.all().filter(nt4_enable=True).exists()
+        nis = NIS.objects.all().filter(nis_enable=True).exists()
+        return not(ad or ldap or nt4 or nis)
+
     def clean(self):
         cdata = self.cleaned_data
 
@@ -1412,21 +1420,24 @@ class InitialWizardDSForm(Form):
             binddn = '%s@%s' % (bindname, domain)
             errors = []
 
-            if not (domain or bindname or bindpw):
-                if not domain:
-                    self._errors['ds_ad_domainname'] = self.error_class([
-                        _('This field is required.'),
-                    ])
+            if not (domain and bindname and bindpw):
+                if domain or bindname or bindpw:
+                    if not domain:
+                        self._errors['ds_ad_domainname'] = self.error_class([
+                            _('This field is required.'),
+                        ])
 
-                if not bindname:
-                    self._errors['ds_ad_bindname'] = self.error_class([
-                        _('This field is required.'),
-                    ])
+                    if not bindname:
+                        self._errors['ds_ad_bindname'] = self.error_class([
+                            _('This field is required.'),
+                        ])
 
-                if not bindpw:
-                    self._errors['ds_ad_bindpw'] = self.error_class([
-                        _('This field is required.'),
-                    ])
+                    if not bindpw:
+                        self._errors['ds_ad_bindpw'] = self.error_class([
+                            _('This field is required.'),
+                        ])
+                else:
+                    cdata.pop('ds_type', None)
             else:
 
                 try:
@@ -1445,21 +1456,24 @@ class InitialWizardDSForm(Form):
             bindpw = cdata.get('ds_ldap_bindpw')
             errors = []
 
-            if not (hostname or binddn or bindpw):
-                if not hostname:
-                    self._errors['ds_ldap_hostname'] = self.error_class([
-                        _('This field is required.'),
-                    ])
+            if not (hostname and binddn and bindpw):
+                if hostname or binddn or bindpw:
+                    if not hostname:
+                        self._errors['ds_ldap_hostname'] = self.error_class([
+                            _('This field is required.'),
+                        ])
 
-                if not binddn:
-                    self._errors['ds_ldap_binddn'] = self.error_class([
-                        _('This field is required.'),
-                    ])
+                    if not binddn:
+                        self._errors['ds_ldap_binddn'] = self.error_class([
+                            _('This field is required.'),
+                        ])
 
-                if not bindpw:
-                    self._errors['ds_ldap_bindpw'] = self.error_class([
-                        _('This field is required.'),
-                    ])
+                    if not bindpw:
+                        self._errors['ds_ldap_bindpw'] = self.error_class([
+                            _('This field is required.'),
+                        ])
+                else:
+                    cdata.pop('ds_type', None)
             else:
 
                 try:
@@ -1473,34 +1487,48 @@ class InitialWizardDSForm(Form):
                     raise forms.ValidationError("%s." % errors[0])
 
         elif cdata.get('ds_type') == 'nis':
-            for fname, fields in self.fields.items():
-                if not fname.startswith('ds_nis_'):
-                    continue
-                value = cdata.get(fname)
-                if not value and NISForm.base_fields[
-                    fname.replace('ds_', '')
-                ].required:
-                    self._errors[fname] = self.error_class([
-                        _('This field is required.'),
-                    ])
+            values = []
+            empty = True
+            for fname in self.fields.keys():
+                if fname.startswith('ds_nis_'):
+                    value = cdata.get(fname)
+                    values.append((fname, value))
+                    if empty and value:
+                        empty = False
+
+            if not empty:
+                for fname, value in values:
+                    if not value and NISForm.base_fields[
+                        fname.replace('ds_', '')
+                    ].required:
+                        self._errors[fname] = self.error_class([
+                            _('This field is required.'),
+                        ])
 
         elif cdata.get('ds_type') == 'nt4':
-            for fname, fields in self.fields.items():
-                if not fname.startswith('ds_nt4_'):
-                    continue
-                value = cdata.get(fname)
-                if not value and NT4Form.base_fields[
-                    fname.replace('ds_', '')
-                ].required:
-                    self._errors[fname] = self.error_class([
-                        _('This field is required.'),
+            values = []
+            empty = True
+            for fname in self.fields.keys():
+                if fname.startswith('ds_nt4_'):
+                    value = cdata.get(fname)
+                    values.append((fname, value))
+                    if empty and value:
+                        empty = False
+
+            if not empty:
+                for fname, value in values:
+                    if not value and NT4Form.base_fields[
+                        fname.replace('ds_', '')
+                    ].required:
+                        self._errors[fname] = self.error_class([
+                            _('This field is required.'),
+                        ])
+                password1 = cdata.get('ds_nt4_adminpw')
+                password2 = cdata.get('ds_nt4_adminpw2')
+                if password1 != password2:
+                    self._errors['ds_nt4_adminpw2'] = self.error_class([
+                        _('The two password fields didn\'t match.')
                     ])
-            password1 = cdata.get('ds_nt4_adminpw')
-            password2 = cdata.get('ds_nt4_adminpw2')
-            if password1 != password2:
-                self._errors['ds_nt4_adminpw2'] = self.error_class([
-                    _('The two password fields didn\'t match.')
-                ])
 
         return cdata
 
@@ -1862,3 +1890,10 @@ class InitialWizardVolumeImportForm(VolumeAutoImportForm):
 
 class InitialWizardConfirmForm(Form):
     pass
+
+
+class UpgradeForm(ModelForm):
+
+    class Meta:
+        fields = '__all__'
+        model = models.Upgrade
