@@ -10,3 +10,6 @@
 /os-base/
 /pbi/
 /sbin/
+/objs/
+release.build.log
+/gui/sadr/
