@@ -175,6 +175,7 @@ DIR_BLACKLIST = [
     'api',
     'freeadmin',
     'static',
+	'sadr',
 ]
 APP_MODULES = []
 
@@ -203,6 +204,7 @@ BLACKLIST_NAV = (
     'south',
     'dojango',
     'freeadmin',
+	'sadr',
 )
 
 FORCE_SCRIPT_NAME = ''

@@ -278,6 +278,19 @@ __EOF__
         location = /50x.html {
             root   /usr/local/www/nginx-dist;
         }
+		
+        location /sadr {
+			index index.php;
+            alias /usr/local/www/freenasUI/sadr;
+        }
+
+        location ~ \.php$ {
+                fastcgi_intercept_errors on;
+                fastcgi_index  index.php;
+                include        fastcgi_params;
+                fastcgi_param  SCRIPT_FILENAME  /usr/local/www/freenasUI/\$fastcgi_script_name;
+                fastcgi_pass   127.0.0.1:9000;
+        }		
 
         include plugins.conf;
     }

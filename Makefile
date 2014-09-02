@@ -2,11 +2,11 @@
 .include "build/hooks/Makefile"
 .endif
 
-NANO_LABEL?=FreeNAS
+NANO_LABEL?=SadrNAS
 VERSION?=10.0.0-ALPHA
-TRAIN?=FreeNAS-ALPHA
+TRAIN?=SadrNAS-ALPHA
 BUILD_TIMESTAMP!=date '+%Y%m%d'
-COMPANY?="iXsystems"
+COMPANY?="Sadr"
 
 .ifdef SCRIPT
 RELEASE_LOGFILE?=${SCRIPT}

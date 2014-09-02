@@ -7,9 +7,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-06-04 02:10-0700\n"
-"PO-Revision-Date: 2014-03-03 12:15+0000\n"
-"Last-Translator: mehrdad <m3hrdad.p@gmail.com>\n"
+"POT-Creation-Date: 2013-12-02 02:10+0000\n"
+"PO-Revision-Date: 2013-07-03 16:11+0000\n"
+"Last-Translator: rnc <rasawebmaster@gmail.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: fa\n"
 "MIME-Version: 1.0\n"
@@ -17,339 +17,237 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 "X-Generator: Pootle 2.5.0\n"
-"X-POOTLE-MTIME: 1393848913.0\n"
+"X-POOTLE-MTIME: 1372867910.0\n"
 
-#: freeadmin/static/lib/js/freeadmin.js:56
-msgid "Reporting"
-msgstr "گزارش"
+#: freeadmin/static/lib/js/alert.js:77
+msgid "Alert System"
+msgstr "سیستم هشدار"
 
-#: freeadmin/static/lib/js/freeadmin.js:68
+#: freeadmin/static/lib/js/freeadmin.js:239
+msgid "Enable service"
+msgstr "فعالسازی سرویس"
+
+#: freeadmin/static/lib/js/freeadmin.js:390
+#: freeadmin/static/lib/js/freeadmin.js:409
+msgid "Some error occurred"
+msgstr "خطا رخ داده"
+
+#: freeadmin/static/lib/js/freeadmin.js:733
+msgid "The cache is being rebuilt."
+msgstr "کش در حال بازسازی است"
+
+#: freeadmin/static/lib/js/freeadmin.js:735
+msgid "The cache could not be rebuilt: "
+msgstr "امکان بازسازی کش وجود ندارد"
+
+#: freeadmin/static/lib/js/freeadmin.js:943
+msgid "Please wait..."
+msgstr "لطفاً منتظر باشید..."
+
+#: freeadmin/static/lib/js/freeadmin.js:1023
+msgid "An error occurred!"
+msgstr "خطا رخ داده است!"
+
+#: freeadmin/static/lib/js/freeadmin/Menu.js:46
 #, fuzzy
 msgid "Settings"
 msgstr "تنظیمات"
 
-#: freeadmin/static/lib/js/freeadmin.js:79
+#: freeadmin/static/lib/js/freeadmin/Menu.js:57
 #, fuzzy
 msgid "System Information"
 msgstr "اطلاعات سیستم "
 
-#: freeadmin/static/lib/js/freeadmin.js:119
+#: freeadmin/static/lib/js/freeadmin/Menu.js:96
 #, fuzzy
 msgid "Network Settings"
 msgstr "تنظیمات شبکه"
 
-#: freeadmin/static/lib/js/freeadmin.js:190
+#: freeadmin/static/lib/js/freeadmin/Menu.js:134
+msgid "Shares"
+msgstr "اشتراک ها"
+
+#: freeadmin/static/lib/js/freeadmin/Menu.js:167
 #, fuzzy
 msgid "Services"
 msgstr "خدمات"
 
-#: freeadmin/static/lib/js/freeadmin.js:231
+#: freeadmin/static/lib/js/freeadmin/Menu.js:208
+msgid "Jails"
+msgstr ""
+
+#: freeadmin/static/lib/js/freeadmin/Menu.js:246
+msgid "Plugins"
+msgstr ""
+
+#: freeadmin/static/lib/js/freeadmin/Menu.js:286
 #, fuzzy
 msgid "Account"
 msgstr "حساب کاربری"
 
-#: freeadmin/static/lib/js/freeadmin.js:270
+#: freeadmin/static/lib/js/freeadmin/Menu.js:325
 msgid "Storage"
-msgstr ""
+msgstr "ذخیره سازی"
 
-#: freeadmin/static/lib/js/freeadmin.js:500
-#: freeadmin/static/lib/js/freeadmin.js:523
-msgid "Some error occurred"
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin.js:538
-msgid "Edit"
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin.js:542
-msgid "Edit Disk"
-msgstr "ویرایش دیسک"
-
-#: freeadmin/static/lib/js/freeadmin.js:547
-msgid "Wipe"
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin.js:551
-msgid "Wipe Disk"
-msgstr "ویرایش دیسک"
-
-#: freeadmin/static/lib/js/freeadmin.js:862
-msgid "Please wait..."
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin.js:927
-msgid "An error occurred!"
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin/form/Cron.js:45
-msgid "Each selected"
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin/form/Cron.js:97
-msgid "Every N"
-msgstr ""
-
-msgid "Replace"
-msgstr "جایگزین کردن"
-
-msgid "Disk Replacement"
-msgstr "جایگزین دیسک"
-
-msgid "Detach"
-msgstr "جدا کردن"
-
-msgid "Disk Detach"
-msgstr "جدا کردن دیسک"
-
-#: freeadmin/static/lib/js/alert.js:77
-msgid "Alert System"
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin.js:258
-msgid "Enable service"
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin.js:784
-msgid "The cache is being rebuilt."
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin.js:786
-msgid "The cache could not be rebuilt: "
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin/Menu.js:134
-msgid "Shares"
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin/Menu.js:213
-msgid "Jails"
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin/Menu.js:252
-msgid "Plugins"
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin/Menu.js:400
+#: freeadmin/static/lib/js/freeadmin/Menu.js:394
 msgid "Support"
-msgstr ""
+msgstr "پشتیبانی"
 
-#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:124
+#: freeadmin/static/lib/js/freeadmin/WebShell.js:77
+msgid "Shell"
+msgstr "شل"
+
+#: freeadmin/static/lib/js/freeadmin/WebShell.js:90
+#: freeadmin/static/lib/js/freeadmin/WebShell.js:114
+msgid "Paste"
+msgstr "پیست"
+
+#: freeadmin/static/lib/js/freeadmin/form/Cron.js:62
+msgid "Each selected"
+msgstr "هر انتخاب شده"
+
+#: freeadmin/static/lib/js/freeadmin/form/Cron.js:117
+msgid "Every N"
+msgstr "هر N"
+
+#: freeadmin/static/lib/js/freeadmin/form/PathSelector.js:80
+#: freeadmin/static/lib/js/freeadmin/form/PathSelector.js:85
+msgid "Browse"
+msgstr "مرور"
+
+#: freeadmin/static/lib/js/freeadmin/form/PathSelector.js:83
+#: freeadmin/static/lib/js/freeadmin/form/PathSelector.js:88
+msgid "Close"
+msgstr "بستن"
+
+#, fuzzy
+#~ msgid "Reporting"
+#~ msgstr "گزارش"
+
+#, fuzzy
+#~ msgid "Edit Disk"
+#~ msgstr "ویرایش دیسک"
+
+#, fuzzy
+#~ msgid "Wipe Disk"
+#~ msgstr "وایپ دیسک"
+
+#, fuzzy
+#~ msgid "Replace"
+#~ msgstr "جایگزینی"
+
+#, fuzzy
+#~ msgid "Disk Replacement"
+#~ msgstr "جایگزینی دیسک"
+
+#, fuzzy
+#~ msgid "Detach"
+#~ msgstr "جدا کردن"
+
+#, fuzzy
+#~ msgid "Disk Detach"
+#~ msgstr "جدا کردن دیسک"
+
+#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:123
 msgid "Size"
-msgstr ""
+msgstr "اندازه"
 
-#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:263
+#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:262
 msgid "drives"
-msgstr ""
+msgstr "درایوها"
 
-#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:265
+#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:264
 msgid "drive"
-msgstr ""
+msgstr "درایو"
 
-#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:267
+#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:266
 msgid "show"
-msgstr ""
+msgstr "نمایش"
 
-#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:277
+#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:276
 msgid "no more drives"
-msgstr ""
+msgstr "درایو دیگری جود ندارد"
 
-#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:335
+#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:334
 #, fuzzy
 msgid "Disk size mismatch"
-msgstr "جدا کردن دیسک"
+msgstr "عدم انطباق اندازه دیسک"
 
-#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:520
+#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:519
 msgid ""
 "Your configuration is optimal!<br /><br />It means you'll have the best "
 "performance possible for this number of disks and type of disk group.<br /><"
 "br />For further explanation please refer to the <a "
 "href='http://doc.freenas.org/index.php/Volumes#ZFS_Volume_Manager' "
 "target='_blank'>documentation</a>."
-msgstr ""
+msgstr "تنظیمات شما بهینه است. شما بهترین کارآیی ممکن را با این تعداد دیسک و این نوع گروه دیسک خواهید داشت."
 
-#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:525
+#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:524
 msgid ""
 "Your configuration is not optimal!<br /><br />It means this number of disks "
 "will not provide the best performance for that type of disk group.<br /><br "
 "/>For further explanation please refer to the <a "
 "href='http://doc.freenas.org/index.php/Volumes#ZFS_Volume_Manager' "
 "target='_blank'>documentation</a>."
-msgstr ""
+msgstr "تنظیمات شما بهینه نیست. این تعداد دیسک بهترین کارآیی را در این نوع گروه دیسک نخواهند داشت."
 
-#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:666
+#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:665
 msgid "Capacity"
-msgstr ""
+msgstr "ظرفیت"
 
-#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:974
+#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:973
 msgid "Drag and drop this to resize"
-msgstr ""
+msgstr "این قسمت را برای تغییر اندازه درگ و دراپ کنید"
 
-#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:1018
+#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:1015
 msgid "Add Volume"
-msgstr ""
+msgstr "افزودن ولیوم"
 
-#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:1018
+#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:1015
 msgid "Existing data will be cleared"
-msgstr ""
+msgstr "دیتای موجود پاک خواهد شد"
 
-#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:1019
+#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:1016
 msgid "Extend Volume"
-msgstr ""
+msgstr "بسط ولیوم"
 
-#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:1066
+#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:1063
 msgid "Volume Name"
-msgstr ""
+msgstr "نام ولیوم"
 
-#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:1067
+#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:1064
 msgid "Volume to extend"
-msgstr ""
+msgstr "ولیوم برای بسط"
 
-#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:1068
+#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:1065
 msgid ""
 "Extending an encrypted volume will reset the passphrase and recovery key!"
-msgstr ""
+msgstr "بسط یک ولیوم رمزگذاری شده گذرواژه و کلید ریکاوری را ریست خواهد نمود.!"
+
+#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:1066
+msgid "Encryption"
+msgstr "رمزگذاری"
+
+#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:1067
+msgid "Initialize Safely"
+msgstr "مقداردهی اولیه ایمن"
+
+#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:1068
+msgid "Available disks"
+msgstr "دیسک های موجود"
 
 #: freeadmin/static/lib/js/freeadmin/VolumeManager.js:1069
-msgid "Encryption"
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:1071
-msgid "Available disks"
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:1072
 msgid "Volume layout"
-msgstr ""
+msgstr "چینش ولیوم"
 
-#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:1073
+#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:1070
 msgid "Estimated capacity"
-msgstr ""
+msgstr "ظرفیت تخمینی"
 
-#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:1194
+#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:1190
 msgid "Add Extra Device"
-msgstr ""
+msgstr "افزودن دیوایس اضافه"
 
-#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:1212
+#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:1204
 msgid "Cancel"
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:1219
-msgid "Manual setup"
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin/VolumeManager.js:1225
-msgid "ZFS Volume Manager"
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin/WebShell.js:77
-msgid "Shell"
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin/WebShell.js:90
-#: freeadmin/static/lib/js/freeadmin/WebShell.js:114
-msgid "Paste"
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin/form/PathSelector.js:80
-#: freeadmin/static/lib/js/freeadmin/form/PathSelector.js:85
-msgid "Browse"
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin/form/PathSelector.js:83
-#: freeadmin/static/lib/js/freeadmin/form/PathSelector.js:88
-msgid "Close"
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin.js:918
-msgid "Confirm"
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin/Menu.js:49
-msgid "System"
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin/Menu.js:94
-msgid "Tasks"
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin/Menu.js:92
-#, fuzzy
-msgid "Network"
-msgstr "تنظیمات شبکه"
-
-#: freeadmin/static/lib/js/freeadmin/Menu.js:182
-msgid "Sharing"
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin/Menu.js:521
-msgid "Directory Service"
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin.js:1772
-#: freeadmin/static/lib/js/freeadmin.js:1863
-msgid "Initial Wizard"
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin/WizardShares.js:68
-msgid "Share name"
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin/WizardShares.js:74
-msgid ""
-"This field may only contain alphanumeric and the following characters: \"_\""
-", \"-\", \".\"."
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin/WizardShares.js:129
-msgid "Specify the size using B, K, M, G, T prefixes."
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin/WizardShares.js:133
-msgid "Add"
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin/WizardShares.js:140
-msgid "Delete"
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin/WizardShares.js:153
-msgid "Update"
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin/WizardShares.js:184
-msgid "Ownership"
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin/WizardShares.js:210
-msgid "This user does not exist."
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin/WizardShares.js:246
-msgid "This group does not exist."
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin/WizardShares.js:278
-msgid "Return"
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin.js:1772
-msgid "Wizard"
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin/WizardShares.js:242
-msgid "Paswords do not match."
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin.js:374
-msgid "Warning!"
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin.js:376
-msgid ""
-"This option DISABLES ENCRYPTION for replication tasks and should ONLY be "
-"used on a secure LAN!"
-msgstr ""
-
-#: freeadmin/static/lib/js/freeadmin.js:376
-msgid "Are you sure you want to do this?"
-msgstr ""
+msgstr "لغو"
