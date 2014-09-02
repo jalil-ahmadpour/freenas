@@ -5,6 +5,7 @@
 .DS_Store
 /docs/api/_build/
 /gui/local_settings.py
+/gui/sadr/
 /FreeBSD/
 /filtered-patches/
 /os-base/
