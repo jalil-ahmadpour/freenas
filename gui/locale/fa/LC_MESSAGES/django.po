@@ -6831,10 +6831,9 @@ msgstr "برای این ولیوم یک اسکراب از قبل وجود دار
 #~ msgid "Disable password"
 #~ msgstr "غیرفعالسازی گذرواژه"
 
-<<<<<<< HEAD
 #~ msgid "Time in milliseconds"
 #~ msgstr "زمان به میلی‌ثانیه"
-=======
+
 #: templates/system/initialwizard_import.html:31
 msgid "Skip"
 msgstr ""
@@ -7546,12 +7545,10 @@ msgid ""
 msgstr ""
 
 #: jails/models.py:359
-#, fuzzy
 msgid "IPv4 DHCP"
-msgstr "DHCP"
+msgstr "IPv4 DHCP"
 
 #: jails/models.py:383
-#, fuzzy
 msgid "IPv6 Autoconfigure"
 msgstr "پیکربندی خودکار IPv4"
 
@@ -7562,7 +7559,6 @@ msgid ""
 msgstr ""
 
 #: storage/views.py:203
-#, fuzzy
 msgid "WARNING!"
 msgstr "هشدار"
 
@@ -7584,4 +7580,3 @@ msgid ""
 "iXsystems, Inc. can not be held responsible for any lost or unrecoverable "
 "data as a consequence of using this feature."
 msgstr ""
->>>>>>> upstream/freebsd10
