@@ -73,7 +73,7 @@ do
 		fi
 		;;
 	f)
-		do_copyout_partition=false
+		do_copyout_partition=true
 		;;
 	h)
 		usage
