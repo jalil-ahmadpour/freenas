@@ -9,6 +9,8 @@ BLACKLIST = [
     'SSL',
     'SystemDataset',
     'Registration',
+    'CertificateAuthority',
+    'Certificate'
 ]
 NAME = _('System')
 ICON = u'SystemIcon'
@@ -22,6 +24,15 @@ class Advanced(TreeNode):
     icon = u"SettingsIcon"
     type = 'opensystem'
     order = -90
+
+
+class BootEnv(TreeNode):
+
+    gname = 'BootEnv'
+    name = _(u'Boot')
+    icon = 'BootIcon'
+    type = 'opensystem'
+    order = -92
 
 
 class Email(TreeNode):
@@ -73,3 +84,21 @@ class Upgrade(TreeNode):
     name = _('Upgrade')
     type = 'opensystem'
     icon = 'UpgradeIcon'
+
+
+class CertificateAuthorityView(TreeNode):
+
+    gname = 'CertificateAuthority'
+    name = _('CAs')
+    type = 'opensystem'
+    icon = u'CertificateAuthorityIcon'
+    order = 10
+
+
+class CertificateView(TreeNode):
+
+    gname = 'Certificate'
+    name = _('Certificates')
+    type = 'opensystem'
+    icon = u'CertificateIcon'
+    order = 15

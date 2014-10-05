@@ -15,7 +15,7 @@ COMMENT=        miscellaneous files for FreeNAS
 
 USE_XZ=		yes
 
-LOCALBASE=/
+PREFIX=/
 
 # explicitly set this for the port build
 FREEBSD_SRCTOP=/usr/src
@@ -118,8 +118,11 @@ do-install:
 	${INSTALL_SCRIPT} ${WRKSRC}/freenas/usr/local/libexec/nas/generate_afpd_conf.py ${STAGEDIR}/${PREFIX}/usr/local/libexec/nas/generate_afpd_conf.py
 	${INSTALL_SCRIPT} ${WRKSRC}/freenas/usr/local/libexec/nas/generate_ctl_conf.py ${STAGEDIR}/${PREFIX}/usr/local/libexec/nas/generate_ctl_conf.py
 	${INSTALL_SCRIPT} ${WRKSRC}/freenas/usr/local/libexec/nas/generate_krb5_conf.py ${STAGEDIR}/${PREFIX}/usr/local/libexec/nas/generate_krb5_conf.py
+	${INSTALL_SCRIPT} ${WRKSRC}/freenas/usr/local/libexec/nas/generate_ldap_conf.py ${STAGEDIR}/${PREFIX}/usr/local/libexec/nas/generate_ldap_conf.py
 	${INSTALL_SCRIPT} ${WRKSRC}/freenas/usr/local/libexec/nas/generate_nsswitch_conf.py ${STAGEDIR}/${PREFIX}/usr/local/libexec/nas/generate_nsswitch_conf.py
+	${INSTALL_SCRIPT} ${WRKSRC}/freenas/usr/local/libexec/nas/generate_resolv_conf.py ${STAGEDIR}/${PREFIX}/usr/local/libexec/nas/generate_resolv_conf.py
 	${INSTALL_SCRIPT} ${WRKSRC}/freenas/usr/local/libexec/nas/generate_smb4_conf.py ${STAGEDIR}/${PREFIX}/usr/local/libexec/nas/generate_smb4_conf.py
+	${INSTALL_SCRIPT} ${WRKSRC}/freenas/usr/local/libexec/nas/generate_ssl_certificates.py ${STAGEDIR}/${PREFIX}/usr/local/libexec/nas/generate_ssl_certificates.py
 	${INSTALL_SCRIPT} ${WRKSRC}/freenas/usr/local/libexec/nas/generate_sssd_conf.py ${STAGEDIR}/${PREFIX}/usr/local/libexec/nas/generate_sssd_conf.py
 	${INSTALL_SCRIPT} ${WRKSRC}/freenas/usr/local/libexec/nas/register_mdns.py ${STAGEDIR}/${PREFIX}/usr/local/libexec/nas/register_mdns.py
 	mkdir -p ${STAGEDIR}/${PREFIX}/usr/local/libexec/samba
@@ -136,7 +139,7 @@ do-install:
 	${INSTALL_SCRIPT} ${WRKSRC}/freenas/etc/ix.rc.d/ix-afpd ${STAGEDIR}/${PREFIX}/etc/ix.rc.d/ix-afpd
 	${INSTALL_SCRIPT} ${WRKSRC}/freenas/etc/ix.rc.d/ix-aliases ${STAGEDIR}/${PREFIX}/etc/ix.rc.d/ix-aliases
 	${INSTALL_SCRIPT} ${WRKSRC}/freenas/etc/ix.rc.d/ix-ataidle ${STAGEDIR}/${PREFIX}/etc/ix.rc.d/ix-ataidle
-	${INSTALL_SCRIPT} ${WRKSRC}/freenas/etc/ix.rc.d/ix-bsnmpd ${STAGEDIR}/${PREFIX}/etc/ix.rc.d/ix-bsnmpd
+	${INSTALL_SCRIPT} ${WRKSRC}/freenas/etc/ix.rc.d/ix-snmpd ${STAGEDIR}/${PREFIX}/etc/ix.rc.d/ix-snmpd
 	${INSTALL_SCRIPT} ${WRKSRC}/freenas/etc/ix.rc.d/ix-cache ${STAGEDIR}/${PREFIX}/etc/ix.rc.d/ix-cache
 	${INSTALL_SCRIPT} ${WRKSRC}/freenas/etc/ix.rc.d/ix-collectd ${STAGEDIR}/${PREFIX}/etc/ix.rc.d/ix-collectd
 	${INSTALL_SCRIPT} ${WRKSRC}/freenas/etc/ix.rc.d/ix-crontab ${STAGEDIR}/${PREFIX}/etc/ix.rc.d/ix-crontab
@@ -165,6 +168,7 @@ do-install:
 	${INSTALL_SCRIPT} ${WRKSRC}/freenas/etc/ix.rc.d/ix-postinit ${STAGEDIR}/${PREFIX}/etc/ix.rc.d/ix-postinit
 	${INSTALL_SCRIPT} ${WRKSRC}/freenas/etc/ix.rc.d/ix-preinit ${STAGEDIR}/${PREFIX}/etc/ix.rc.d/ix-preinit
 	${INSTALL_SCRIPT} ${WRKSRC}/freenas/etc/ix.rc.d/ix-proftpd ${STAGEDIR}/${PREFIX}/etc/ix.rc.d/ix-proftpd
+	${INSTALL_SCRIPT} ${WRKSRC}/freenas/etc/ix.rc.d/ix-resolv ${STAGEDIR}/${PREFIX}/etc/ix.rc.d/ix-resolv
 	${INSTALL_SCRIPT} ${WRKSRC}/freenas/etc/ix.rc.d/ix-rsyncd ${STAGEDIR}/${PREFIX}/etc/ix.rc.d/ix-rsyncd
 	${INSTALL_SCRIPT} ${WRKSRC}/freenas/etc/ix.rc.d/ix-pre-samba ${STAGEDIR}/${PREFIX}/etc/ix.rc.d/ix-pre-samba
 	${INSTALL_SCRIPT} ${WRKSRC}/freenas/etc/ix.rc.d/ix-post-samba ${STAGEDIR}/${PREFIX}/etc/ix.rc.d/ix-post-samba
@@ -242,6 +246,7 @@ do-install:
 	${INSTALL_SCRIPT} ${WRKSRC}/freenas/etc/ix/templates/warden/jail-pre-delete ${STAGEDIR}/${PREFIX}/etc/ix/templates/warden/jail-pre-delete
 	${INSTALL_SCRIPT} ${WRKSRC}/freenas/etc/ix/templates/warden/jail-pre-start ${STAGEDIR}/${PREFIX}/etc/ix/templates/warden/jail-pre-start
 	${INSTALL_SCRIPT} ${WRKSRC}/freenas/etc/ix/templates/warden/jail-pre-stop ${STAGEDIR}/${PREFIX}/etc/ix/templates/warden/jail-pre-stop
+	${INSTALL_SCRIPT} ${WRKSRC}/freenas/etc/iso_3166_2_countries.csv ${STAGEDIR}/${PREFIX}/etc/iso_3166_2_countries.csv
 	${INSTALL_SCRIPT} ${WRKSRC}/freenas/etc/netcli ${STAGEDIR}/${PREFIX}/etc/netcli
 	${INSTALL_SCRIPT} ${WRKSRC}/freenas/etc/netcli.sh ${STAGEDIR}/${PREFIX}/etc/netcli.sh
 	${INSTALL_SCRIPT} ${WRKSRC}/freenas/etc/find_alias_for_smtplib.py ${STAGEDIR}/${PREFIX}/etc/find_alias_for_smtplib.py

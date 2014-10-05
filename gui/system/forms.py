@@ -26,6 +26,7 @@
 #####################################################################
 
 from collections import defaultdict, OrderedDict
+from datetime import datetime
 import cPickle as pickle
 import json
 import logging
@@ -36,10 +37,13 @@ import stat
 import subprocess
 import tempfile
 
+from OpenSSL import crypto
+
 from django.conf import settings
 from django.contrib.formtools.wizard.views import SessionWizardView
 from django.core.files.storage import FileSystemStorage
 from django.db import transaction
+from django.db.models import Q
 from django.forms import FileField
 from django.forms.formsets import BaseFormSet, formset_factory
 from django.http import HttpResponse
@@ -49,6 +53,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils.translation import ugettext as __
 
 from dojango import forms
+from freenasOS import Configuration, Train, Update
 from freenasUI import choices
 from freenasUI.account.models import bsdGroups, bsdUsers
 from freenasUI.common import humanize_size
@@ -57,6 +62,15 @@ from freenasUI.common.freenasldap import (
     FreeNAS_ActiveDirectory,
     FreeNAS_LDAP
 )
+from freenasUI.common.ssl import (
+    create_self_signed_certificate,
+    create_certificate_signing_request,
+    create_certificate,
+    sign_certificate,
+    load_certificate,
+    generate_key
+)
+
 from freenasUI.directoryservice.forms import (
     ActiveDirectoryForm,
     LDAPForm,
@@ -130,6 +144,49 @@ def clean_path_locked(mp):
             )
 
 
+class BootEnvAddForm(Form):
+
+    name = forms.CharField(
+        label=_('Name'),
+        max_length=50,
+    )
+
+    def __init__(self, *args, **kwargs):
+        self._source = kwargs.pop('source', None)
+        super(BootEnvAddForm, self).__init__(*args, **kwargs)
+
+    def save(self, *args, **kwargs):
+        kwargs = {}
+        if self._source:
+            kwargs['bename'] = self._source
+        clone = Update.CreateClone(
+            self.cleaned_data.get('name'),
+            **kwargs
+        )
+        if clone is False:
+            raise MiddlewareError(_('Failed to create a new Boot.'))
+
+
+class BootEnvRenameForm(Form):
+
+    name = forms.CharField(
+        label=_('Name'),
+        max_length=50,
+    )
+
+    def __init__(self, *args, **kwargs):
+        self._name = kwargs.pop('name')
+        super(BootEnvRenameForm, self).__init__(*args, **kwargs)
+
+    def save(self, *args, **kwargs):
+        rename = Update.RenameClone(
+            self._name,
+            self.cleaned_data.get('name'),
+        )
+        if rename is False:
+            raise MiddlewareError(_('Failed to rename Boot Environment.'))
+
+
 class CommonWizard(SessionWizardView):
 
     template_done = 'system/done.html'
@@ -199,6 +256,7 @@ class InitialWizard(CommonWizard):
 
     def done(self, form_list, **kwargs):
 
+        events = []
         curstep = 0
         progress = {
             'step': curstep,
@@ -218,6 +276,7 @@ class InitialWizard(CommonWizard):
         volume_form = form_list.get('volume')
         volume_import = form_list.get('import')
         ds_form = form_list.get('ds')
+        sys_form = form_list.get('system')
 
         with transaction.atomic():
             _n = notifier()
@@ -333,15 +392,17 @@ class InitialWizard(CommonWizard):
                     if not qs.exists():
                         if share_usercreate:
                             if share_userpw:
-                                password = share_userpw
+                                password = share_userpw.encode('utf8')
                                 password_disabled = False
                             else:
                                 password = '!'
                                 password_disabled = True
                             uid, gid, unixhash, smbhash = _n.user_create(
-                                share_user,
-                                share_user,
-                                password,
+                                username=share_user,
+                                fullname=share_user,
+                                password=password,
+                                shell='/bin/csh',
+                                homedir='/nonexistent',
                                 password_disabled=password_disabled
                             )
                             bsdUsers.objects.create(
@@ -448,6 +509,30 @@ class InitialWizard(CommonWizard):
                 with open(WIZARD_PROGRESSFILE, 'wb') as f:
                     f.write(pickle.dumps(progress))
 
+            console = cleaned_data.get('sys_console')
+            adv = models.Advanced.objects.order_by('-id')[0]
+            advdata = dict(adv.__dict__)
+            advdata['adv_consolemsg'] = console
+            advdata.pop('_state', None)
+            advform = AdvancedForm(
+                advdata,
+                instance=adv,
+            )
+            if advform.is_valid():
+                advform.save()
+                advform.done(self.request, events)
+
+            # Set administrative email to receive alerts
+            if cleaned_data.get('sys_email'):
+                bsdUsers.objects.filter(bsdusr_uid=0).update(
+                    bsdusr_email=cleaned_data.get('sys_email'),
+                )
+
+            email = models.Email.objects.order_by('-id')[0]
+            em = EmailForm(cleaned_data, instance=email)
+            if em.is_valid():
+                em.save()
+
         if ds_form:
 
             curstep += 1
@@ -539,7 +624,7 @@ class InitialWizard(CommonWizard):
                     if not name.startswith('ds_nt4'):
                         continue
                     nt4data[name.replace('ds_', '')] = value
-                nt4data.update['nt4_enable': True]
+                nt4data['nt4_enable'] = True
 
                 nt4form = NT4Form(
                     data=nt4data,
@@ -612,6 +697,10 @@ class InitialWizard(CommonWizard):
         for service in services_restart:
             _n.restart(service)
 
+        Update.CreateClone('Wizard-%s' % (
+            datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+        ))
+
         progress['percent'] = 100
         with open(WIZARD_PROGRESSFILE, 'wb') as f:
             f.write(pickle.dumps(progress))
@@ -620,28 +709,26 @@ class InitialWizard(CommonWizard):
 
         return JsonResp(
             self.request,
-            message=__('Initial configuration succeeded.')
+            message=__('Initial configuration succeeded.'),
+            events=events,
         )
 
 
-class FirmwareWizard(FileWizard):
+class ManualUpdateWizard(FileWizard):
 
     def get_template_names(self):
         return [
-            'system/firmware_wizard_%s.html' % self.get_step_index(),
+            'system/manualupdate_wizard_%s.html' % self.get_step_index(),
         ]
 
-    def done(self, form_list, **kwargs):
-        cleaned_data = self.get_all_cleaned_data()
-        firmware = cleaned_data.get('firmware')
-        path = self.file_storage.path(firmware.file.name)
+    def do_update(self, updatefile, sha256):
 
         # Verify integrity of uploaded image.
-        assert ('sha256' in cleaned_data)
+        path = self.file_storage.path(updatefile.file.name)
         checksum = notifier().checksum(path)
-        if checksum != str(cleaned_data['sha256']).lower().strip():
-            self.file_storage.delete(firmware.name)
-            raise MiddlewareError("Invalid firmware, wrong checksum")
+        if checksum != sha256.lower().strip():
+            self.file_storage.delete(updatefile.name)
+            raise MiddlewareError("Invalid update file, wrong checksum")
 
         # Validate that the image would pass all pre-install
         # requirements.
@@ -652,18 +739,26 @@ class FirmwareWizard(FileWizard):
         try:
             retval = notifier().validate_update(path)
         except:
-            self.file_storage.delete(firmware.name)
+            self.file_storage.delete(updatefile.name)
             raise
 
         if not retval:
-            self.file_storage.delete(firmware.name)
-            raise MiddlewareError("Invalid firmware")
+            self.file_storage.delete(updatefile.name)
+            raise MiddlewareError("Invalid update file")
 
         notifier().apply_update(path)
         try:
             notifier().destroy_upload_location()
         except Exception, e:
             log.warn("Failed to destroy upload location: %s", e.value)
+
+    def done(self, form_list, **kwargs):
+        cleaned_data = self.get_all_cleaned_data()
+        assert ('sha256' in cleaned_data)
+        updatefile = cleaned_data.get('updatefile')
+
+        self.do_update(updatefile, cleaned_data['sha256'].encode('ascii', 'ignore'))
+
         self.request.session['allow_reboot'] = True
 
         response = render_to_response('system/done.html', {
@@ -716,6 +811,19 @@ class SettingsForm(ModelForm):
         self.fields['stg_guiv6address'].choices = [
             ['::', '::']
         ] + list(choices.IPChoices(ipv4=False))
+
+    def clean(self):
+        cdata = self.cleaned_data
+        proto = cdata.get("stg_guiprotocol")
+        if proto == "http": 
+            return cdata
+
+        certificate = cdata["stg_guicertificate"]
+        if not certificate:
+            raise forms.ValidationError(
+                "HTTPS specified without certificate")
+
+        return cdata
 
     def save(self):
         super(SettingsForm, self).save()
@@ -952,157 +1060,12 @@ class EmailForm(ModelForm):
         return email
 
 
-class SSLForm(ModelForm):
-    ssl_passphrase2 = forms.CharField(
-        max_length=120,
-        label=_("Confirm Passphrase"),
-        widget=forms.widgets.PasswordInput(),
-        required=False,
-    )
-
-    class Meta:
-        fields = '__all__'
-        model = models.SSL
-        widgets = {
-            'ssl_passphrase': forms.widgets.PasswordInput(render_value=False),
-        }
-
-    def __init__(self, *args, **kwargs):
-        super(SSLForm, self).__init__(*args, **kwargs)
-        self.fields.keyOrder = [
-            'ssl_org',
-            'ssl_unit',
-            'ssl_email',
-            'ssl_city',
-            'ssl_state',
-            'ssl_country',
-            'ssl_common',
-            'ssl_passphrase',
-            'ssl_passphrase2',
-            'ssl_certfile',
-        ]
-        if self.instance.ssl_passphrase:
-            self.fields['ssl_passphrase'].required = False
-
-    def clean_ssl_passphrase2(self):
-        passphrase1 = self.cleaned_data.get("ssl_passphrase")
-        passphrase2 = self.cleaned_data.get("ssl_passphrase2")
-        if passphrase1 != passphrase2:
-            raise forms.ValidationError(
-                _("The two passphrase fields didn't match.")
-            )
-        return passphrase2
-
-    def get_x509_modulus(self, x509_file_path):
-        if not x509_file_path:
-            return None
-
-        proc = subprocess.Popen([
-            "/usr/bin/openssl",
-            "x509",
-            "-noout",
-            "-modulus",
-            "-in", x509_file_path,
-        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-        modulus, err = proc.communicate()
-        if proc.returncode != 0:
-            return None
-
-        return modulus.strip()
-
-    def get_key_modulus(self, key_file_path, type='rsa'):
-        if not key_file_path:
-            return None
-
-        proc = subprocess.Popen([
-            "/usr/bin/openssl",
-            type,
-            "-noout",
-            "-modulus",
-            "-in", key_file_path,
-        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-        modulus, err = proc.communicate()
-        if proc.returncode != 0:
-            return None
-
-        return modulus.strip()
-
-    def clean_ssl_certfile(self):
-        certfile = self.cleaned_data.get("ssl_certfile")
-        if not certfile:
-            return None
-        reg = re.search(
-            r'(-----BEGIN ([DR]SA) PRIVATE KEY-----.*?'
-            r'-----END \2 PRIVATE KEY-----)',
-            certfile,
-            re.M | re.S
-        )
-        if not reg:
-            raise forms.ValidationError(
-                _("RSA or DSA private key not found")
-            )
-        priv = reg.group()
-
-        priv_file = tempfile.mktemp(dir='/tmp/')
-        with open(priv_file, 'w') as f:
-            f.write(priv)
-
-        keytype = None
-        reg = re.search(r'-----BEGIN ([DR]SA) PRIVATE KEY-----', priv)
-        if reg:
-            keytype = reg.group(1).lower()
-
-        modulus1 = self.get_key_modulus(priv_file, keytype)
-        os.unlink(priv_file)
-        if not modulus1:
-            raise forms.ValidationError(
-                _("RSA or DSA private key is not valid"))
-
-        reg = re.findall(
-            r'(-----BEGIN CERTIFICATE-----.*?'
-            r'-----END CERTIFICATE-----)',
-            certfile,
-            re.M | re.S
-        )
-
-        verified = False
-        for cert in reg:
-            x509_file = tempfile.mktemp(dir='/tmp')
-            with open(x509_file, 'w') as f:
-                f.write(cert)
-
-            modulus2 = self.get_x509_modulus(x509_file)
-            os.unlink(x509_file)
-            if modulus1 == modulus2:
-                verified = True
-                break
-
-        if not verified:
-            raise forms.ValidationError(
-                _("The modulus of certificate and key must match")
-            )
-
-        return certfile
-
-    def clean(self):
-        cdata = self.cleaned_data
-        if not cdata.get("ssl_passphrase2"):
-            cdata['ssl_passphrase'] = cdata['ssl_passphrase2']
-        return cdata
-
-    def save(self):
-        super(SSLForm, self).save()
-        notifier().start_ssl("nginx")
-
-
-class FirmwareTemporaryLocationForm(Form):
+class ManualUpdateTemporaryLocationForm(Form):
     mountpoint = forms.ChoiceField(
-        label=_("Place to temporarily place firmware file"),
+        label=_("Place to temporarily place update file"),
         help_text=_(
             "The system will use this place to temporarily store the "
-            "firmware file before it's being applied."),
+            "update file before it's being applied."),
         choices=(),
         widget=forms.Select(attrs={'class': 'required'}),
     )
@@ -1115,7 +1078,7 @@ class FirmwareTemporaryLocationForm(Form):
         return mp
 
     def __init__(self, *args, **kwargs):
-        super(FirmwareTemporaryLocationForm, self).__init__(*args, **kwargs)
+        super(ManualUpdateTemporaryLocationForm, self).__init__(*args, **kwargs)
         self.fields['mountpoint'].choices = [
             (x.mp_path, x.mp_path)
             for x in MountPoint.objects.exclude(mp_volume__vol_fstype='iscsi')
@@ -1132,8 +1095,8 @@ class FirmwareTemporaryLocationForm(Form):
             notifier().change_upload_location(mp)
 
 
-class FirmwareUploadForm(Form):
-    firmware = FileField(label=_("New image to be installed"), required=True)
+class ManualUpdateUploadForm(Form):
+    updatefile = FileField(label=_("Update file to be installed"), required=True)
     sha256 = forms.CharField(
         label=_("SHA256 sum for the image"),
         required=True
@@ -1225,7 +1188,7 @@ class TunableForm(ModelForm):
         value = cdata.get('tun_var')
         if value:
             if (
-                cdata.get('tun_type') == 'loader' and
+                cdata.get('tun_type') in ('loader', 'rc') and
                 not LOADER_VARNAME_FORMAT_RE.match(value)
             ) or (
                 cdata.get('tun_type') == 'sysctl' and
@@ -1755,7 +1718,7 @@ class InitialWizardVolumeForm(Form):
                 rows = 2
                 perrow = (num - mod) / 2
                 vdevtype = cls._grp_type(perrow)
-            elif num < 99:
+            elif num >= 18:
                 div9 = int(num / 9)
                 div10 = int(num / 10)
                 mod9 = num % 9
@@ -1888,12 +1851,719 @@ class InitialWizardVolumeImportForm(VolumeAutoImportForm):
         return len(cls._populate_disk_choices()) > 0
 
 
+class InitialWizardSystemForm(Form):
+
+    sys_console = forms.BooleanField(
+        label=_('Console messages'),
+        help_text=_('Show console messages in the footer.'),
+        required=False,
+    )
+    sys_email = forms.EmailField(
+        label=_('Root E-mail'),
+        help_text=_('Administrative email address used for alerts.'),
+        required=False,
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(InitialWizardSystemForm, self).__init__(*args, **kwargs)
+        self._instance = models.Email.objects.order_by('-id')[0]
+        for fname, field in EmailForm(instance=self._instance).fields.items():
+            self.fields[fname] = field
+            field.initial = getattr(self._instance, fname, None)
+            field.required = False
+        self.fields['em_smtp'].widget.attrs['onChange'] = (
+            'toggleGeneric("id_system-em_smtp", ["id_system-em_pass1", '
+            '"id_system-em_pass2", "id_system-em_user"], true);'
+        )
+
+    def clean(self):
+        em = EmailForm(self.cleaned_data, instance=self._instance)
+        if self.cleaned_data.get('em_fromemail') and not em.is_valid():
+            for fname, errors in em._errors.items():
+                self._errors[fname] = errors
+        return self.cleaned_data
+
+
 class InitialWizardConfirmForm(Form):
     pass
 
 
 class UpgradeForm(ModelForm):
 
+    trains = forms.MultipleChoiceField(
+        label=_('Trains'),
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+    )
+
     class Meta:
         fields = '__all__'
         model = models.Upgrade
+
+    def __init__(self, *args, **kwargs):
+        super(UpgradeForm, self).__init__(*args, **kwargs)
+        self._conf = Configuration.Configuration()
+        self._conf.LoadTrainsConfig()
+        self._tchoices = []
+        trains = self._conf.AvailableTrains()
+        if trains:
+            for name in self._conf.AvailableTrains().keys():
+                self._tchoices.append((name, name))
+            self.fields['trains'].choices = self._tchoices
+            self.fields['trains'].initial = self._conf.WatchedTrains()
+
+    def save(self, *args, **kwargs):
+        obj = super(UpgradeForm, self).save(*args, **kwargs)
+
+        watched = self._conf.WatchedTrains() or []
+        for name, desc in self._tchoices:
+            if name in self.cleaned_data.get('trains'):
+                if name not in watched:
+                    self._conf.WatchTrain(Train.Train(name), watch=True)
+            else:
+                if name in watched:
+                    self._conf.WatchTrain(Train.Train(name), watch=False)
+        self._conf.SaveTrainsConfig()
+
+
+
+class CertificateAuthorityForm(ModelForm):
+    class Meta:
+        fields = '__all__'
+        model = models.CertificateAuthority
+
+    def save(self):
+        super(CertificateAuthorityForm, self).save()
+        notifier().start("ix-ssl")
+
+
+class CertificateAuthorityEditForm(ModelForm):
+    cert_name = forms.CharField(
+        label=_("Name"),
+        required=True,
+        help_text=_("Descriptive Name")
+    )
+    cert_certificate = forms.CharField(
+        label=_("Certificate"),
+        widget=forms.Textarea(),
+        required=True,
+        help_text=_("Cut and paste the contents of your certificate here")
+    )
+    cert_serial = forms.IntegerField(
+        label=_("Serial"),
+        required=True,
+        help_text=_("Serial for next Certificate")
+    )
+
+    def save(self):
+        super(CertificateAuthorityEditForm, self).save()
+        notifier().start("ix-ssl")
+
+    class Meta:
+        fields = [
+            'cert_name',
+            'cert_certificate',
+            'cert_privatekey',
+            'cert_serial'
+        ]
+        model = models.CertificateAuthority
+
+
+class CertificateAuthorityImportForm(ModelForm):
+    cert_name = forms.CharField(
+        label=_("Name"),
+        required=True,
+        help_text=_("Descriptive Name")
+    )
+    cert_certificate = forms.CharField(
+        label=_("Certificate"),
+        widget=forms.Textarea(),
+        required=True,
+        help_text=_("Cut and paste the contents of your certificate here")
+    )
+    cert_serial = forms.IntegerField(
+        label=_("Serial"),
+        required=True,
+        help_text=_("Serial for next Certificate")
+    )
+
+    def save(self):
+        self.instance.cert_type = models.CA_TYPE_EXISTING
+
+        cert_info = load_certificate(self.instance.cert_certificate)
+        self.instance.cert_country = cert_info['country']
+        self.instance.cert_state = cert_info['state']
+        self.instance.cert_city = cert_info['city']
+        self.instance.cert_organization = cert_info['organization']
+        self.instance.cert_common = cert_info['common']
+        self.instance.cert_email = cert_info['email']
+        self.instance.cert_digest_algorithm = cert_info['digest_algorithm']
+
+        super(CertificateAuthorityImportForm, self).save()
+
+        notifier().start("ix-ssl")
+
+    class Meta:
+        fields = [
+            'cert_name',
+            'cert_certificate',
+            'cert_privatekey',
+            'cert_serial'
+        ]
+        model = models.CertificateAuthority
+
+
+class CertificateAuthorityCreateInternalForm(ModelForm):
+    cert_name = forms.CharField(
+        label=_("Name"),
+        required=True,
+        help_text=_("Descriptive Name")
+    )
+    cert_key_length = forms.ChoiceField(
+        label=_("Key Length"),
+        required=True,
+        choices=choices.CERT_KEY_LENGTH_CHOICES,
+        initial=2048
+    )
+    cert_digest_algorithm = forms.ChoiceField(
+        label=_("Digest Algorithm"),
+        required=True,
+        choices=choices.CERT_DIGEST_ALGORITHM_CHOICES,
+        initial='SHA256'
+    )
+    cert_lifetime = forms.IntegerField(
+        label=_("Lifetime"),
+        required=True,
+        initial=3650
+    )
+    cert_country = forms.ChoiceField(
+        label=_("Country"),
+        required=True,
+        choices=choices.COUNTRY_CHOICES(), 
+        initial='US',
+        help_text=_("Country Name (2 letter code)")
+    )
+    cert_state = forms.CharField(
+        label=_("State"),
+        required=True,
+        help_text=_("State or Province Name (full name)")
+    )
+    cert_city = forms.CharField(
+        label=_("City"),
+        required=True,
+        help_text=_("Locality Name (eg, city)")
+    )
+    cert_organization = forms.CharField(
+        label=_("Organization"),
+        required=True,
+        help_text=_("Organization Name (eg, company)")
+    )
+    cert_email = forms.CharField(
+        label=_("Email Address"),
+        required=True
+    )
+    cert_common = forms.CharField(
+        label=_("Common Name"),
+        required=True,
+        help_text=_("Common Name (eg, YOUR name)")
+    )
+
+    def save(self):
+        self.instance.cert_type = models.CA_TYPE_INTERNAL
+        cert_info = {
+            'key_length': self.instance.cert_key_length,
+            'country': self.instance.cert_country,
+            'state': self.instance.cert_state,
+            'city': self.instance.cert_city,
+            'organization': self.instance.cert_organization,
+            'common': self.instance.cert_common,
+            'email': self.instance.cert_email,
+            'serial': self.instance.cert_serial,
+            'lifetime': self.instance.cert_lifetime,
+            'digest_algorithm': self.instance.cert_digest_algorithm
+        }
+
+        (cert, key) = create_self_signed_certificate(cert_info)
+        self.instance.cert_certificate = \
+            crypto.dump_certificate(crypto.FILETYPE_PEM, cert)
+        self.instance.cert_privatekey = \
+            crypto.dump_privatekey(crypto.FILETYPE_PEM, key)
+
+        super(CertificateAuthorityCreateInternalForm, self).save()
+
+        notifier().start("ix-ssl")
+
+    class Meta:
+        fields = [
+            'cert_name',
+            'cert_key_length',
+            'cert_digest_algorithm',
+            'cert_lifetime',
+            'cert_country',
+            'cert_state',
+            'cert_city',
+            'cert_organization',
+            'cert_email',
+            'cert_common'
+        ]
+        model = models.CertificateAuthority
+
+
+class CertificateAuthorityCreateIntermediateForm(ModelForm):
+    cert_name = forms.CharField(
+        label=_("Name"),
+        required=True,
+        help_text=_("Descriptive Name")
+    )
+    cert_key_length = forms.ChoiceField(
+        label=_("Key Length"),
+        required=True,
+        choices=choices.CERT_KEY_LENGTH_CHOICES,
+        initial=2048
+    )
+    cert_digest_algorithm = forms.ChoiceField(
+        label=_("Digest Algorithm"),
+        required=True,
+        choices=choices.CERT_DIGEST_ALGORITHM_CHOICES,
+        initial='SHA256'
+    )
+    cert_lifetime = forms.IntegerField(
+        label=_("Lifetime"),
+        required=True,
+        initial=3650
+    )
+    cert_country = forms.ChoiceField(
+        label=_("Country"),
+        required=True,
+        choices=choices.COUNTRY_CHOICES(), 
+        initial='US',
+        help_text=_("Country Name (2 letter code)")
+    )
+    cert_state = forms.CharField(
+        label=_("State"),
+        required=True,
+        help_text=_("State or Province Name (full name)")
+    )
+    cert_city = forms.CharField(
+        label=_("City"),
+        required=True,
+        help_text=_("Locality Name (eg, city)")
+    )
+    cert_organization = forms.CharField(
+        label=_("Organization"),
+        required=True,
+        help_text=_("Organization Name (eg, company)")
+    )
+    cert_email = forms.CharField(
+        label=_("Email Address"),
+        required=True
+    )
+    cert_common = forms.CharField(
+        label=_("Common Name"),
+        required=True,
+        help_text=_("Common Name (eg, YOUR name)")
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(CertificateAuthorityCreateIntermediateForm, self).__init__(*args, **kwargs)
+
+        self.fields['cert_signedby'].required = True
+        self.fields['cert_signedby'].queryset = \
+            models.CertificateAuthority.objects.exclude(
+                Q(cert_certificate__isnull=True) |
+                Q(cert_privatekey__isnull=True) |
+                Q(cert_certificate__exact='') |
+                Q(cert_privatekey__exact='')
+            )
+        self.fields['cert_signedby'].widget.attrs["onChange"] = (
+            "javascript:CA_autopopulate();"
+        )
+
+    def save(self):
+        self.instance.cert_type = models.CA_TYPE_INTERMEDIATE
+        cert_info = {
+            'key_length': self.instance.cert_key_length,
+            'country': self.instance.cert_country,
+            'state': self.instance.cert_state,
+            'city': self.instance.cert_city,
+            'organization': self.instance.cert_organization,
+            'common': self.instance.cert_common,
+            'email': self.instance.cert_email,
+            'lifetime': self.instance.cert_lifetime,
+            'digest_algorithm': self.instance.cert_digest_algorithm
+        }
+
+        signing_cert = self.instance.cert_signedby
+
+        publickey = generate_key(self.instance.cert_key_length)
+        signkey = crypto.load_privatekey(
+            crypto.FILETYPE_PEM,
+            signing_cert.cert_privatekey
+        )
+
+        cert = create_certificate(cert_info)
+        cert.set_pubkey(publickey)
+
+        sign_certificate(cert, signkey, self.instance.cert_digest_algorithm)
+
+        self.instance.cert_certificate = \
+            crypto.dump_certificate(crypto.FILETYPE_PEM, cert)
+        self.instance.cert_privatekey = \
+            crypto.dump_privatekey(crypto.FILETYPE_PEM, publickey)
+
+        super(CertificateAuthorityCreateIntermediateForm, self).save()
+
+        notifier().start("ix-ssl")
+
+    class Meta:
+        fields = [
+            'cert_signedby',
+            'cert_name',
+            'cert_key_length',
+            'cert_digest_algorithm',
+            'cert_lifetime',
+            'cert_country',
+            'cert_state',
+            'cert_city',
+            'cert_organization',
+            'cert_email',
+            'cert_common'
+        ]
+        model = models.CertificateAuthority
+
+
+class CertificateForm(ModelForm):
+    class Meta:
+        fields = '__all__'
+        model = models.Certificate
+
+    def save(self):
+        super(CertificateForm, self).save()
+        notifier().start("ix-ssl")
+
+
+class CertificateEditForm(ModelForm):
+    cert_name = forms.CharField(
+        label=_("Name"),
+        required=True,
+        help_text=_("Descriptive Name")
+    )
+    cert_certificate = forms.CharField(
+        label=_("Certificate"),
+        widget=forms.Textarea(),
+        required=True,
+        help_text=_("Cut and paste the contents of your certificate here")
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(CertificateEditForm, self).__init__(*args, **kwargs)
+
+        self.fields['cert_name'].widget.attrs['readonly'] = True
+        self.fields['cert_certificate'].widget.attrs['readonly'] = True
+        self.fields['cert_privatekey'].widget.attrs['readonly'] = True
+
+    def save(self):
+        super(CertificateEditForm, self).save()
+        notifier().start("ix-ssl") 
+
+    class Meta:
+        fields = [
+            'cert_name',
+            'cert_certificate',
+            'cert_privatekey'
+        ]
+        model = models.Certificate
+
+
+class CertificateCSREditForm(ModelForm):
+    cert_name = forms.CharField(
+        label=_("Name"),
+        required=True,
+        help_text=_("Descriptive Name")
+    )
+    cert_CSR = forms.CharField(
+        label=_("Certificate Signing Request"),
+        widget=forms.Textarea(),
+        required=True
+    )
+    cert_certificate = forms.CharField(
+        label=_("Certificate"),
+        widget=forms.Textarea(),
+        required=True,
+        help_text=_("Cut and paste the contents of your certificate here")
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(CertificateCSREditForm, self).__init__(*args, **kwargs)
+
+        self.fields['cert_name'].widget.attrs['readonly'] = True
+        self.fields['cert_CSR'].widget.attrs['readonly'] = True
+
+    def save(self):
+        self.instance.cert_type = models.CERT_TYPE_EXISTING
+        super(CertificateCSREditForm, self).save()
+        notifier().start("ix-ssl")
+
+    class Meta:
+        fields = [
+            'cert_name',
+            'cert_CSR',
+            'cert_certificate'
+        ]
+        model = models.Certificate
+
+
+class CertificateImportForm(ModelForm):
+    cert_name = forms.CharField(
+        label=_("Name"),
+        required=True,
+        help_text=_("Descriptive Name")
+    )
+    cert_certificate = forms.CharField(
+        label=_("Certificate"),
+        widget=forms.Textarea(),
+        required=True,
+        help_text=_("Cut and paste the contents of your certificate here")
+    )
+    cert_privatekey = forms.CharField(
+        label=_("Private Key"),
+        widget=forms.Textarea(),
+        required=True,
+        help_text=_("Cut and paste the contents of your private key here"),
+    )
+
+    def save(self):
+        self.instance.cert_type = models.CERT_TYPE_EXISTING
+
+        cert_info = load_certificate(self.instance.cert_certificate)
+        self.instance.cert_country = cert_info['country']
+        self.instance.cert_state = cert_info['state']
+        self.instance.cert_city = cert_info['city']
+        self.instance.cert_organization = cert_info['organization']
+        self.instance.cert_common = cert_info['common']
+        self.instance.cert_email = cert_info['email']
+        self.instance.cert_digest_algorithm = cert_info['digest_algorithm']
+
+        super(CertificateImportForm, self).save()
+
+        notifier().start("ix-ssl")
+
+    class Meta:
+        fields = [
+            'cert_name',
+            'cert_certificate',
+            'cert_privatekey'
+        ]
+        model = models.Certificate
+
+
+class CertificateCreateInternalForm(ModelForm):
+    cert_name = forms.CharField(
+        label=_("Name"),
+        required=True,
+        help_text=_("Descriptive Name")
+    )
+    cert_key_length = forms.ChoiceField(
+        label=_("Key Length"),
+        required=True,
+        choices=choices.CERT_KEY_LENGTH_CHOICES,
+        initial=2048
+    )
+    cert_digest_algorithm = forms.ChoiceField(
+        label=_("Digest Algorithm"),
+        required=True,
+        choices=choices.CERT_DIGEST_ALGORITHM_CHOICES,
+        initial='SHA256'
+    )
+    cert_lifetime = forms.IntegerField(
+        label=_("Lifetime"),
+        required=True,
+        initial=3650
+    )
+    cert_country = forms.ChoiceField(
+        label=_("Country"),
+        required=True,
+        choices=choices.COUNTRY_CHOICES(), 
+        initial='US',
+        help_text=_("Country Name (2 letter code)")
+    )
+    cert_state = forms.CharField(
+        label=_("State"),
+        required=True,
+        help_text=_("State or Province Name (full name)")
+    )
+    cert_city = forms.CharField(
+        label=_("City"),
+        required=True,
+        help_text=_("Locality Name (eg, city)")
+    )
+    cert_organization = forms.CharField(
+        label=_("Organization"),
+        required=True,
+        help_text=_("Organization Name (eg, company)")
+    )
+    cert_email = forms.CharField(
+        label=_("Email Address"),
+        required=True
+    )
+    cert_common = forms.CharField(
+        label=_("Common Name"),
+        required=True,
+        help_text=_("Common Name (eg, YOUR name)")
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(CertificateCreateInternalForm, self).__init__(*args, **kwargs)
+
+        self.fields['cert_signedby'].required = True
+        self.fields['cert_signedby'].queryset = \
+            models.CertificateAuthority.objects.exclude(
+                Q(cert_certificate__isnull=True) |
+                Q(cert_privatekey__isnull=True) |
+                Q(cert_certificate__exact='') |
+                Q(cert_privatekey__exact='')
+            )
+        self.fields['cert_signedby'].widget.attrs["onChange"] = (
+            "javascript:certificate_autopopulate();"
+        )
+
+    def save(self):
+        self.instance.cert_type = models.CERT_TYPE_INTERNAL
+        cert_info = {
+            'key_length': self.instance.cert_key_length,
+            'country': self.instance.cert_country,
+            'state': self.instance.cert_state,
+            'city': self.instance.cert_city,
+            'organization': self.instance.cert_organization,
+            'common': self.instance.cert_common,
+            'email': self.instance.cert_email,
+            'lifetime': self.instance.cert_lifetime,
+            'digest_algorithm': self.instance.cert_digest_algorithm
+        }
+
+        signing_cert = self.instance.cert_signedby
+
+        publickey = generate_key(self.instance.cert_key_length)
+        signkey = crypto.load_privatekey(
+            crypto.FILETYPE_PEM,
+            signing_cert.cert_privatekey
+        )
+
+        cert = create_certificate(cert_info)
+        cert.set_pubkey(publickey)
+
+        sign_certificate(cert, signkey, self.instance.cert_digest_algorithm)
+
+        self.instance.cert_certificate = \
+            crypto.dump_certificate(crypto.FILETYPE_PEM, cert)
+        self.instance.cert_privatekey = \
+            crypto.dump_privatekey(crypto.FILETYPE_PEM, publickey)
+
+        super(CertificateCreateInternalForm, self).save()
+
+        notifier().start("ix-ssl")
+
+    class Meta:
+        fields = [
+            'cert_signedby',
+            'cert_name',
+            'cert_key_length',
+            'cert_digest_algorithm',
+            'cert_lifetime',
+            'cert_country',
+            'cert_state',
+            'cert_city',
+            'cert_organization',
+            'cert_email',
+            'cert_common'
+        ]
+        model = models.Certificate
+
+
+class CertificateCreateCSRForm(ModelForm):
+    cert_name = forms.CharField(
+        label=_("Name"),
+        required=True,
+        help_text=_("Descriptive Name")
+    )
+    cert_key_length = forms.ChoiceField(
+        label=_("Key Length"),
+        required=True,
+        choices=choices.CERT_KEY_LENGTH_CHOICES,
+        initial=2048
+    )
+    cert_digest_algorithm = forms.ChoiceField(
+        label=_("Digest Algorithm"),
+        required=True,
+        choices=choices.CERT_DIGEST_ALGORITHM_CHOICES,
+        initial='SHA256'
+    )
+    cert_country = forms.ChoiceField(
+        label=_("Country"),
+        required=True,
+        choices=choices.COUNTRY_CHOICES(), 
+        initial='US',
+        help_text=_("Country Name (2 letter code)")
+    )
+    cert_state = forms.CharField(
+        label=_("State"),
+        required=True,
+        help_text=_("State or Province Name (full name)")
+    )
+    cert_city = forms.CharField(
+        label=_("City"),
+        required=True,
+        help_text=_("Locality Name (eg, city)")
+    )
+    cert_organization = forms.CharField(
+        label=_("Organization"),
+        required=True,
+        help_text=_("Organization Name (eg, company)")
+    )
+    cert_email = forms.CharField(
+        label=_("Email Address"),
+        required=True
+    )
+    cert_common = forms.CharField(
+        label=_("Common Name"),
+        required=True,
+        help_text=_("Common Name (eg, YOUR name)")
+    )
+
+    def save(self):
+        self.instance.cert_type = models.CERT_TYPE_CSR
+        req_info = {
+            'key_length': self.instance.cert_key_length,
+            'country': self.instance.cert_country,
+            'state': self.instance.cert_state,
+            'city': self.instance.cert_city,
+            'organization': self.instance.cert_organization,
+            'common': self.instance.cert_common,
+            'email': self.instance.cert_email,
+            'digest_algorithm': self.instance.cert_digest_algorithm
+        }
+
+        (req, key) = create_certificate_signing_request(req_info)
+
+        self.instance.cert_CSR = \
+            crypto.dump_certificate_request(crypto.FILETYPE_PEM, req)
+        self.instance.cert_privatekey = \
+            crypto.dump_privatekey(crypto.FILETYPE_PEM, key)
+
+        super(CertificateCreateCSRForm, self).save()
+
+        notifier().start("ix-ssl")
+
+    class Meta:
+        fields = [
+            'cert_name',
+            'cert_key_length',
+            'cert_digest_algorithm',
+            'cert_country',
+            'cert_state',
+            'cert_city',
+            'cert_organization',
+            'cert_email',
+            'cert_common'
+        ]
+        model = models.Certificate

@@ -50,16 +50,6 @@ write_version_file ( )
 	fi
 }
 
-add_truenas_gui()
-{
-	local gui dst dstCR
-	gui=${AVATAR_ROOT}/gui
-	dstCR=/usr/local/www/freenasUI
-	dst=${NANO_WORLDDIR}${dstCR}
-
-	add_gui_encrypted "$gui" "$dst" "$dstCR"
-}
-
 # Move the $world/data to the /data partion
 move_data()
 {
@@ -111,7 +101,6 @@ remove_gcc47()
 /usr/local/lib/gcc47/libstdc++.so.6
 /usr/local/lib/gcc47/libstdc++.so
 /usr/local/lib/gcc47/libstdc++.a
-/usr/local/lib/gcc47/libstdc++.so.6-gdb.py
 /usr/local/lib/gcc47/libmudflap.so.0
 /usr/local/lib/gcc47/libmudflap.so
 /usr/local/lib/gcc47/libmudflapth.so.0
@@ -161,7 +150,6 @@ remove_gcc()
 /usr/local/lib/gcc47/libstdc++.so.6
 /usr/local/lib/gcc47/libstdc++.so
 /usr/local/lib/gcc47/libstdc++.a
-/usr/local/lib/gcc47/libstdc++.so.6-gdb.py
 /usr/local/lib/gcc47/libmudflap.so.0
 /usr/local/lib/gcc47/libmudflap.so
 /usr/local/lib/gcc47/libmudflapth.so.0
@@ -233,11 +221,6 @@ create_var_home_symlink()
 	rm -f $NANO_WORLDDIR/home || :
 	rm -Rf $NANO_WORLDDIR/home
 	ln -sfh /var/home $NANO_WORLDDIR/home
-}
-
-add_netcli_to_etc_shells()
-{
-	echo "/etc/netcli.sh" >> ${NANO_WORLDDIR}/etc/shells
 }
 
 freenas_custom()
@@ -339,62 +322,17 @@ freenas_custom()
 
 last_orders() {
 	local cd_image_log
-	local full_image full_image_log
-	local firmware_img gui_upgrade_bname gui_upgrade_image_log
+	local gui_upgrade_bname gui_upgrade_image_log
 	local vmdk_image vmdk_image_compressed vmdk_image_log
 
 	cd_image_log="${MAKEOBJDIRPREFIX}/_.cd_iso"
-	full_image_log="${MAKEOBJDIRPREFIX}/_.full_image"
 	gui_image_log="${MAKEOBJDIRPREFIX}/_.gui_image"
 	vmdk_image_log="${MAKEOBJDIRPREFIX}/_.vmdk_image"
 
-	firmware_img="$NANO_DISKIMGDIR/firmware.img"
-	full_image="$NANO_DISKIMGDIR/$NANO_IMGNAME.img"
 	gui_upgrade_bname="$NANO_DISKIMGDIR/$NANO_IMGNAME.GUI_Upgrade"
 	vmdk_image="$NANO_DISKIMGDIR/$NANO_IMGNAME.vmdk"
 	vmdk_image_compressed="$NANO_DISKIMGDIR/$NANO_IMGNAME.vmdk.xz"
 
-
-	if false; then
-	    pprint 2 "Creating VMDK"
-	    log_file "${vmdk_image_log}"
-	    
-	    (
-		set -x
-		if [ -f /usr/local/bin/VBoxManage ]; then
-		    VBoxManage convertfromraw "$NANO_DISKIMGDIR/$NANO_IMGNAME" "${vmdk_image}" --format VMDK
-		    chmod 644 "${vmdk_image}"
-		    time ${NANO_XZ} ${PXZ_ACCEL} --verbose -9 -f "${vmdk_image}"
-		    sha256_signature=`sha256 ${vmdk_image_compressed}`
-		    echo "${sha256_signature}" > ${vmdk_image_compressed}.sha256.txt
-		else
-		    echo "VBoxManage not found"
-		fi
-	    ) > "${vmdk_image_log}" 2>&1
-	fi
-
-	if false ; then
-        # I don't think we need this any longer
-	pprint 2 "Compressing full disk image"
-	log_file "${full_image_log}"
-
-	(
-	set -x
-
-	# NOTE: keep in synch with create_iso.sh.
-	# NOTE: this is still needed after the .txz payload has been
-	# added because pc-sysinstall doesn't support raw images
-	# (-.-).
-	mv "$NANO_DISKIMGDIR/$NANO_IMGNAME" "$full_image"
-	time ${NANO_XZ} ${PXZ_ACCEL} --verbose -9 -f "$full_image"
-
-	) > "${full_image_log}" 2>&1
-	(
-	cd $NANO_DISKIMGDIR
-	sha256_signature=`sha256 ${NANO_IMGNAME}.img.xz`
-	echo "${sha256_signature}" > ${NANO_IMGNAME}.img.xz.sha256.txt
-	)
-	fi
 
 	pprint 2 "Creating ISO image"
 	log_file "${cd_image_log}"
@@ -413,19 +351,21 @@ last_orders() {
 		(
 		set -x
 
-		# NOTE: keep in synch with create_*_diskimage.
-		mv "$NANO_DISKIMGDIR/_.disk.image" "$firmware_img"
-
 		# the -s arguments map root's "update*" files into the
 		# gui image's bin directory.
 
 		if is_truenas ; then
+			tar -c -p -f ${NANO_OBJ}/gui-boot.tar \
+				-C ${NANO_OBJ}/_.isodir ./boot
+			tar -c -p -f ${NANO_OBJ}/gui-install-environment.tar \
+				-C ${NANO_OBJ}/_.instufs .
+			tar -c -p -f ${NANO_OBJ}/gui-packages.tar \
+				-s '@^Packages@FreeNAS/Packages@' \
+				-C ${NANO_OBJ}/_.packages .
 			tar -c -p -v -f ${gui_upgrade_bname}.tar \
 				-s '@^update$@bin/update@' \
 				-s '@^updatep1$@bin/updatep1@' \
 				-s '@^updatep2$@bin/updatep2@' \
-				-C "${AVATAR_ROOT}/build/nanobsd-cfg/Files/root" \
-					update updatep1 updatep2 \
 				-C "$NANO_WORLDDIR" \
 					etc/avatar.conf \
 				-C "${AVATAR_ROOT}/build/nanobsd-cfg/Installer" \
@@ -434,8 +374,10 @@ last_orders() {
 					. \
 				-C "$AVATAR_ROOT/build/nanobsd-cfg/GUI_Upgrade" \
 					. \
-				-C "$NANO_DISKIMGDIR" \
-					${firmware_img##*/}
+				-C "${NANO_OBJ}" \
+					gui-boot.tar \
+					gui-install-environment.tar \
+					gui-packages.tar
 				${NANO_XZ} ${PXZ_ACCEL} -9 -z ${gui_upgrade_bname}.tar
 				mv ${gui_upgrade_bname}.tar.xz ${gui_upgrade_bname}.txz
 		else

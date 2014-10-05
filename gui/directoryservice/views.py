@@ -49,32 +49,22 @@ def directoryservice_home(request):
     try:
         activedirectory = models.ActiveDirectory.objects.order_by("-id")[0]
     except:
-        activedirectory = models.ActiveDirectory()
+        activedirectory = models.ActiveDirectory.objects.create()
 
     try:
         ldap = models.LDAP.objects.order_by("-id")[0]
     except:
-        ldap = models.LDAP()
+        ldap = models.LDAP.objects.create()
 
     try:
         nis = models.NIS.objects.order_by("-id")[0]
     except:
-        nis = models.NIS()
+        nis = models.NIS.objects.create()
 
     try:
         nt4 = models.NT4.objects.order_by("-id")[0]
     except:
-        nt4 = models.NT4()
-
-    try:
-        kerberoskeytab = models.KerberosKeytab.objects.order_by("-id")[0]
-    except:
-        kerberoskeytab = models.KerberosKeytab()
-
-    try:
-        kerberosrealm = models.KerberosRealm.objects.order_by("-id")[0]
-    except:
-        kerberosrealm = models.KerberosRealm()
+        nt4 = models.NT4.objects.create()
 
     return render(request, 'directoryservice/index.html', {
         'focus_form': request.GET.get('tab', 'directoryservice'),
@@ -82,10 +72,7 @@ def directoryservice_home(request):
         'ldap': ldap,
         'nis': nis,
         'nt4': nt4,
-        'kerberoskeytab': kerberoskeytab,
-        'kerberosrealm':  kerberosrealm
     })
-
 
 def directoryservice_kerberosrealm(request, id):
     kr = models.KerberosRealm.objects.get(pk=id)
@@ -184,6 +171,27 @@ def directoryservice_idmap_ad(request, id):
         form = forms.idmap_ad_Form(instance=idmap_ad)
 
     return render(request, 'directoryservice/idmap_ad.html', {
+        'form': form
+    })
+
+
+def directoryservice_idmap_adex(request, id):
+    idmap_ad = models.idmap_adex.objects.get(id=id)
+
+    if request.method == "POST":
+        form = forms.idmap_adex_Form(request.POST, instance=idmap_ad)
+        if form.is_valid():
+            form.save()
+            return JsonResp(
+                request,
+                message="Idmap adex successfully edited."
+            )
+        else:
+            return JsonResp(request, form=form)
+    else:
+        form = forms.idmap_adex_Form(instance=idmap_ad)
+
+    return render(request, 'directoryservice/idmap_adex.html', {
         'form': form
     })
 

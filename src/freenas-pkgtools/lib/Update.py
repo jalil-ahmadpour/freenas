@@ -1,16 +1,200 @@
-import errno
-import os
-import sys
+from datetime import datetime
 import logging
+import os
+import re
+import subprocess
+import sys
 
 import freenasOS.Manifest as Manifest
 import freenasOS.Configuration as Configuration
 import freenasOS.Installer as Installer
 
-
 log = logging.getLogger('freenasOS.Update')
 
-def CheckForUpdates(root = None, handler = None):
+debug = False
+
+# Used by the clone functions below
+beadm = "/usr/local/sbin/beadm"
+grub_dir = "/boot/grub"
+grub_cfg = "/boot/grub/grub.cfg"
+freenas_pool = "freenas-boot"
+def _grub_snapshot(name):
+    return "%s/grub@Pre-Upgrade-%s" % (freenas_pool, name)
+
+def RunCommand(command, args):
+    # Run the given command.  Uses subprocess module.
+    # Returns True if the command exited with 0, or
+    # False otherwise.
+    import subprocess
+
+    proc_args = [ command ]
+    if args is not None:  proc_args.extend(args)
+    if debug:
+        print >> sys.stderr, proc_args
+        child = 0
+    else:
+        try:
+            child = subprocess.call(proc_args)
+        except:
+            return False
+
+    if child == 0:
+        return True
+    else:
+        return False
+
+
+def ListClones():
+    # Return a list of boot-environment clones.
+    # This is just a simple wrapper for
+    # "beadm list -H"
+    # Because of that, it can't use RunCommand
+    cmd = [beadm, "list", "-H" ]
+    rv = []
+    if debug:
+        print >> sys.stderr, cmd
+        return None
+    try:
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+    except:
+        log.error("Could not run %s", cmd)
+        return None
+    stdout, stderr = p.communicate()
+    if p.returncode != 0:
+        log.error("`%s' returned %d", cmd, p.returncode)
+        return None
+
+    for line in stdout.strip('\n').split('\n'):
+        fields = line.split('\t')
+        rv.append({
+            'name': fields[0],
+            'active': fields[1],
+            'mountpoint': fields[2],
+            'space': fields[3],
+            'created': datetime.strptime(fields[4], '%Y-%m-%d %H:%M'),
+        })
+    return rv
+
+
+def CreateClone(name, snap_grub=True, bename=None):
+    # Create a boot environment from the current
+    # root, using the given name.  Returns False
+    # if it could not create it
+    if bename:
+        args = ["create", "-e", bename, name]
+    else:
+        args = ["create", name]
+    rv = RunCommand(beadm, args)
+    if rv is False:
+        return False
+
+    if snap_grub:
+        # Also create a snapshot of the grub filesystem,
+        # but we don't do anything with it
+        zfs = "/sbin/zfs"
+        args = ["snapshot", _grub_snapshot(name)]
+        if RunCommand(zfs, args) is False:
+            log.debug("Unable to create grub snapshot Pre-Upgrade-%s", name)
+
+    return True
+
+
+def RenameClone(oldname, newname):
+    # Create a boot environment from the current
+    # root, using the given name.  Returns False
+    # if it could not create it
+    args = ["rename", oldname, newname]
+    rv = RunCommand(beadm, args)
+    if rv is False:
+        return False
+    return True
+
+
+def MountClone(name, mountpoint = None):
+    # Mount the given boot environment.  It will
+    # create a random name in /tmp.  Returns the
+    # name of the mountpoint, or None on error.
+    if mountpoint is None:
+        import tempfile
+        try:
+            mount_point = tempfile.mkdtemp()
+        except:
+            return None
+    else:
+        mount_point = mountpoint
+
+    if mount_point is None:
+        return None
+    args = ["mount", name, mount_point ]
+    rv = RunCommand(beadm, args)
+    if rv is False:
+        try:
+            os.rmdir(mount_point)
+        except:
+            pass
+        return None
+
+    # If all that worked... we now need
+    # to get /boot/grub into the clone's mount
+    # point, as a nullfs mount.
+    # Let's see if we need to do that
+    if os.path.exists(grub_cfg) is True and \
+       os.path.exists(mount_point + grub_cfg) is False:
+        # Okay, it needs to be ounted
+        cmd = "/sbin/mount"
+        args = ["-t", "nullfs", grub_dir, mount_point + grub_dir]
+        rv = RunCommand(cmd, args)
+        if rv is False:
+            UnmountClone(name, None)
+            return None
+
+    return mount_point
+
+def ActivateClone(name):
+    # Set the clone to be active for the next boot
+    args = ["activate", name]
+    return RunCommand(beadm, args)
+
+def UnmountClone(name, mount_point = None):
+    # Unmount the given clone.  After unmounting,
+    # it removes the mount directory.
+    # First thing we need to do is try to unmount
+    # the nullfs-mounted grub directory
+    # If this fails, we ignore it for now
+    if mount_point is not None:
+        cmd = "umount"
+        args = [mount_point + grub_dir]
+        RunCommand(cmd, args)
+
+    # Now we ask beadm to unmount it.
+    args = ["unmount", "-f", name]
+    
+    if RunCommand(beadm, args) is False:
+        return False
+
+    if mount_point is not None:
+        try:
+            os.rmdir(mount_point)
+        except:
+            pass
+    return True
+        
+def DeleteClone(name, delete_grub = False):
+    # Delete the clone we created.
+    args = ["destroy", "-F", name]
+    rv = RunCommand(beadm, args)
+    if rv is False:
+        return rv
+
+    if delete_grub:
+        zfs = "/sbin/zfs"
+        args = ["destroy", _grub_snapshot(name)]
+        if RunCommand(zfs, args) is False:
+            log.debug("Unable to delete grub snapshot Pre-Upgrade-%s" % name)
+
+    return rv
+
+def CheckForUpdates(root = None, handler = None, train = None):
     """
     Check for an updated manifest.
     Very simple, uses the configuration module.
@@ -28,9 +212,9 @@ def CheckForUpdates(root = None, handler = None):
     """
     conf = Configuration.Configuration(root)
     cur = conf.SystemManifest()
-    m = conf.FindLatestManifest()
-    log.debug("Current sequence = %d, available sequence = %d" % (cur.Sequence(), m.Sequence()
-                                                                             if m is not None else 0))
+    m = conf.FindLatestManifest(train = train)
+    log.debug("Current sequence = %s, available sequence = %s" % (cur.Sequence(), m.Sequence()
+                                                                             if m is not None else "None"))
     if m is None:
         raise ValueError("Manifest could not be found!")
     diffs = Manifest.CompareManifests(cur, m)
@@ -42,136 +226,12 @@ def CheckForUpdates(root = None, handler = None):
     return m if update else None
 
 
-def Update(root=None, conf=None, check_handler=None, get_handler=None,
+def Update(root=None, conf=None, train = None, check_handler=None, get_handler=None,
            install_handler=None):
     """
     Perform an update.  Calls CheckForUpdates() first, to see if
     there are any. If there are, then magic happens.
     """
-    grub_dir = "/boot/grub"
-    grub_cfg = "/boot/grub/grub.cfg"
-
-    def RunCommand(command, args):
-        # Run the given command.  Uses subprocess module.
-        # Returns True if the command exited with 0, or
-        # False otherwise.
-        import subprocess
-
-        proc_args = [ command ]
-        if args is not None:  proc_args.extend(args)
-        child = subprocess.call(proc_args)
-        if child == 0:
-            return True
-        else:
-            return False
-
-    def CreateClone(name):
-        # Create a boot environment from the current
-        # root, using the given name.  Returns False
-        # if it could not create it
-        beadm = "/usr/local/sbin/beadm"
-        args = ["create", name]
-        try:
-            rv = RunCommand(beadm, args)
-        except:
-            return False
-        # Also create a snapshot of the grub filesystem,
-        # but we don't do anything with it
-        zfs = "/sbin/zfs"
-        try:
-            args = ["snapshot", "freenas-boot/grub@Pre-Upgrade-%s" % name]
-            RunCommand(zfs, args)
-        except:
-            log.debug("Unable to create grub snapshot Pre-Upgrade-%s" % name)
-
-        return rv
-
-    def MountClone(name):
-        # Mount the given boot environment.  It will
-        # create a random name in /tmp.  Returns the
-        # name of the mountpoint, or None on error.
-        import tempfile
-        try:
-            mount_point = tempfile.mkdtemp()
-        except:
-            return None
-
-        if mount_point is None:
-            return None
-        beadm = "/usr/local/sbin/beadm"
-        args = ["mount", name, mount_point ]
-        try:
-            rv = RunCommand(beadm, args)
-        except:
-            try:
-                os.rmdir(mount_point)
-            except:
-                pass
-            return None
-        # If all that worked... we now need
-        # to get /boot/grub into the clone's mount
-        # point, as a nullfs mount.
-        # Let's see if we need to do that
-        if os.path.exists(grub_cfg) is True and \
-           os.path.exists(mount_point + grub_cfg) is False:
-            # Okay, it needs to be ounted
-            cmd = "/sbin/mount"
-            args = ["-t", "nullfs", grub_dir, mount_point + grub_dir]
-            try:
-                rv = RunCommand(cmd, args)
-            except:
-                UnmountClone(name, None)
-                return False
-
-        return mount_point
-
-    def ActivateClone(name):
-        # Set the clone to be active for the next boot
-        beadm = "/usr/local/sbin/beadm"
-        args = ["activate", name]
-        try:
-            rv = RunCommand(beadm, args)
-        except:
-            return False
-        return True
-
-    def UnmountClone(name, mount_point):
-        # Unmount the given clone.  After unmounting,
-        # it removes the mount directory.
-        # First thing we need to do is try to unmount
-        # the nullfs-mounted grub directory
-        # If this fails, we ignore it for now
-        if mount_point is not None:
-            cmd = "umount"
-            args = [mount_point + grub_dir]
-            try:
-                RunCommand(cmd, args)
-            except:
-                pass
-
-        # Now we ask beadm to unmount it.
-        beadm = "/usr/local/sbin/beadm"
-        args = ["unmount", "-f", name]
-
-        try:
-            rv = RunCommand(beadm, args)
-        except:
-            return False
-        try:
-            os.rmdir(mount_point)
-        except:
-            pass
-        return True
-        
-    def DeleteClone(name):
-        # Delete the clone we created.
-        beadm = "/usr/local/sbin/beadm"
-        args = ["destroy", "-F", name]
-        try:
-            rv = RunCommand(beadm, args)
-        except:
-            return False
-        return rv;
 
     deleted_packages = []
     process_packages = []
@@ -183,7 +243,7 @@ def Update(root=None, conf=None, check_handler=None, get_handler=None,
         if check_handler is not None:
             check_handler(op, pkg, old)
 
-    new_man = CheckForUpdates(root, UpdateHandler)
+    new_man = CheckForUpdates(root, handler = UpdateHandler, train = train)
     if new_man is None:
         return
 
@@ -193,7 +253,6 @@ def Update(root=None, conf=None, check_handler=None, get_handler=None,
         # should install the new manifest, and be done -- it
         # may have new release notes, or other issues.
         # Right now, I'm not quite sure how to do this.
-        # I should also learn how to log from python.
         log.debug("Updated manifest but no package differences")
         return
 
@@ -213,7 +272,7 @@ def Update(root=None, conf=None, check_handler=None, get_handler=None,
     if root is None:
         # We clone the existing boot environment to
         # "FreeNAS-<sequence>"
-        clone_name = "FreeNAS-%d" % new_man.Sequence()
+        clone_name = "FreeNAS-%s" % new_man.Sequence()
         if CreateClone(clone_name) is False:
             log.error("Unable to create boot-environment %s" % clone_name)
             raise Exception("Unable to create new boot-environment %s" % clone_name)

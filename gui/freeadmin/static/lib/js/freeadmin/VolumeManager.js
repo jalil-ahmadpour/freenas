@@ -959,6 +959,7 @@ define([
       url: "",
       url_progress: "",
       dedup_warning: "",
+      encryption_warning: "",
       extend: "",
       swapSize: 0,
       manualUrl: "",
@@ -1079,6 +1080,23 @@ define([
           name: "encryption"
         }, this.dapDiskEnc);
 
+        on(enc, "click", function() {
+          if(this.get("value") == "on") {
+            tpDialog = new TooltipDialog({
+              content: me.encryption_warning,
+              onMouseLeave: function() {
+                popup.close(tpDialog);
+                tpDialog.destroyRecursive();
+              }
+            });
+            popup.open({
+              popup: tpDialog,
+              around: enc.domNode,
+              orient: ["above", "after", "below-alt"]
+            });
+          }
+        });
+
         //encini = new CheckBox({
         //  name: "encryption_inirand",
         //  disabled: true
@@ -1169,7 +1187,7 @@ define([
             cancelDialog(this);
             commonDialog({
               style: "max-width: 75%;max-height:70%;background-color:white;overflow:auto;",
-              name: gettext('ZFS Volume Manager'),
+              name: gettext('Manual Setup'),
               url: me.manualUrl,
               nodes: [registry.byId("tab_Volume")]
             });

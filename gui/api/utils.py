@@ -30,15 +30,20 @@ import re
 import urllib
 
 from django.contrib.auth import authenticate
+from django.db.models import FieldDoesNotExist
 from django.db.models.fields.related import ForeignKey
 from django.http import QueryDict
 
 from freenasUI.account.models import bsdUsers
 from freenasUI.freeadmin.apppool import appPool
+from freenasUI.freeadmin.models.fields import MultiSelectField
+from freenasUI.middleware.exceptions import MiddlewareError
+from freenasUI.services.exceptions import ServiceFailed
 
 from tastypie.authentication import (
     Authentication, BasicAuthentication, MultiAuthentication
 )
+from tastypie import fields
 from tastypie.authorization import Authorization
 from tastypie.exceptions import ImmediateHttpResponse
 from tastypie.http import HttpUnauthorized
@@ -46,7 +51,7 @@ from tastypie.paginator import Paginator
 from tastypie.resources import DeclarativeMetaclass, ModelResource, Resource
 
 RE_SORT = re.compile(r'^sort\((.*)\)$')
-log = logging.getLogger('api.resources')
+log = logging.getLogger('api.utils')
 
 
 class DjangoAuthentication(Authentication):
@@ -218,6 +223,18 @@ class ResourceMixin(object):
         )
         return response
 
+    def dispatch(self, request_type, request, *args, **kwargs):
+        try:
+            return super(ResourceMixin, self).dispatch(
+                request_type, request, *args, **kwargs
+            )
+        except (MiddlewareError, ServiceFailed), e:
+            raise ImmediateHttpResponse(
+                response=self.error_response(request, {
+                    'error_message': unicode(e),
+                })
+            )
+
     def dehydrate(self, bundle):
         bundle = super(ResourceMixin, self).dehydrate(bundle)
         name = str(type(self).__name__)
@@ -226,6 +243,13 @@ class ResourceMixin(object):
 
 
 class DojoModelResource(ResourceMixin, ModelResource):
+
+    @classmethod
+    def api_field_from_django_field(cls, f, default=fields.CharField):
+        if isinstance(f, MultiSelectField):
+            return fields.ListField
+        else:
+            return super(DojoModelResource, cls).api_field_from_django_field(f, default=default)
 
     def apply_sorting(self, obj_list, options=None):
         """
@@ -280,11 +304,16 @@ class DojoModelResource(ResourceMixin, ModelResource):
             # Add the pk of the foreign key in the mix
             if key.endswith('_id'):
                 noid = key[:-3]
-                field = getattr(bundle.obj.__class__, noid)
+                field = getattr(bundle.obj.__class__, noid, None)
                 if not field:
                     continue
                 if field and isinstance(field.field, ForeignKey):
                     data[noid] = val
+                    del data[key]
+            else:
+                try:
+                    bundle.obj.__class__._meta.get_field(key)
+                except FieldDoesNotExist:
                     del data[key]
         data.update(bundle.data)
         bundle.data = data
@@ -327,6 +356,9 @@ class DojoModelResource(ResourceMixin, ModelResource):
         # Now pick up the M2M bits.
         m2m_bundle = self.hydrate_m2m(bundle)
         self.save_m2m(m2m_bundle)
+
+        if hasattr(form, 'done') and callable(form.done):
+            form.done(request=bundle.request, events=[])
 
         return bundle
 

@@ -162,9 +162,8 @@ WEEKDAYS_CHOICES = (
         )
 
 VolumeType_Choices = (
-        ('UFS', 'UFS'),
-        ('ZFS', 'ZFS'),
-        )
+    ('ZFS', 'ZFS'),
+)
 
 VolumeEncrypt_Choices = (
         (0, _('Unencrypted')),
@@ -738,6 +737,14 @@ JAIL_TEMPLATE_ARCH_CHOICES = (
     ('x86', 'x86')
 )
 
+class JAIL_TEMPLATE_CHOICES(object):
+    def __iter__(self):
+        from freenasUI.jails.models import JailTemplate
+        yield ('', '-----')
+        for jt in JailTemplate.objects.exclude(jt_system=True):
+            yield (jt.jt_name, jt.jt_name)
+     
+
 REPL_CIPHER = (
     ('standard', _('Standard')),
     ('fast', _('Fast')),
@@ -749,6 +756,7 @@ SAMBA4_ROLE_CHOICES = (
 #    ('classic', 'classic primary domain controller'),
 #    ('netbios', 'netbios backup domain controller'),
     ('dc', 'active directory domain controller'),
+#    ('sdc', 'active directory secondary domain controller'),
 #    ('member', 'member server'),
 #    ('standalone', 'standalone')
 )
@@ -773,6 +781,11 @@ SHARE_TYPE_CHOICES = (
     ('mac', 'Mac')
 )
 
+CASE_SENSITIVITY_CHOICES = (
+   ('sensitive', 'sensitive'),
+   ('insensitive', 'insensitive'),
+   ('mixed', 'mixed')
+)
 
 class SERIAL_CHOICES(object):
 
@@ -791,11 +804,13 @@ class SERIAL_CHOICES(object):
 
 TUNABLE_TYPES = (
     ('loader', _('Loader')),
+    ('rc', _('rc.conf')),
     ('sysctl', _('Sysctl')),
 )
 
 IDMAP_CHOICES = (
     ('ad', _('ad')),
+    ('adex', _('adex')),
     ('autorid', _('autorid')),
     ('hash', _('hash')),
     ('ldap', _('ldap')),
@@ -804,4 +819,102 @@ IDMAP_CHOICES = (
     ('rid', _('rid')),
     ('tdb', _('tdb')),
     ('tdb2', _('tdb2'))
+)
+
+CERT_TYPE_CA_CHOICES = (
+    ('ca', _('Import an existing Certificate Authority')),
+    ('internal_ca', _('Create an internal Certificate Authority')),
+    ('intermediate_ca', _('Create an intermediate Certificate Authority')),
+)
+
+CERT_TYPE_CERTIFICATE_CHOICES = (
+    ('cert', _('Import an existing Certificate')),
+    ('internal_cert', _('Create an internal Certificate')),
+    ('csr', _('Create a Certificate Signing Request')),
+)
+
+CERT_KEY_LENGTH_CHOICES = (
+    (512, '512'),
+    (1024, '1024'),
+    (2048, '2048'),
+    (4096, '4096')
+)
+
+CERT_DIGEST_ALGORITHM_CHOICES = (
+    ('SHA1', _('SHA1')),
+    ('SHA224', _('SHA224')),
+    ('SHA256', _('SHA256')),
+    ('SHA384', _('SHA384')),
+    ('SHA512', _('SHA512'))
+)
+
+class COUNTRY_CHOICES(object):
+    import csv
+
+    def __init__(self):
+
+        self.__country_file = "/etc/iso_3166_2_countries.csv"
+        self.__country_columns = None
+        self.__country_list = []
+
+        with open(self.__country_file, 'r') as csvfile:
+            reader = csv.reader(csvfile)
+
+            i = 0
+            for row in reader:
+                if i != 0:
+                    if row[self.__soi] and row[self.__cni] and \
+                        row[self.__2li] and row[self.__3li]:
+                        self.__country_list.append(row)
+
+                else:
+                    self.__country_columns = row 
+                    self.__soi = self.__get_sort_order_index()
+                    self.__cni = self.__get_common_name_index()
+                    self.__fni = self.__get_formal_name_index()
+                    self.__2li = self.__get_ISO_3166_1_2_letter_code_index()
+                    self.__3li = self.__get_ISO_3166_1_3_letter_code_index()
+
+                i += 1
+
+        self.__country_list = sorted(self.__country_list, \
+            key=lambda x: x[self.__cni])
+
+    def __get_index(self, column):
+        index = -1
+
+        i = 0
+        for c in self.__country_columns: 
+            if c.lower() == column.lower():
+                index = i
+                break 
+
+            i += 1
+
+        return index
+
+    def __get_sort_order_index(self):
+        return self.__get_index('Sort Order')
+
+    def __get_common_name_index(self):
+        return self.__get_index('Common Name')
+
+    def __get_formal_name_index(self):
+        return self.__get_index('Formal Name')
+
+    def __get_ISO_3166_1_2_letter_code_index(self):
+        return self.__get_index('ISO 3166-1 2 Letter Code')
+
+    def __get_ISO_3166_1_3_letter_code_index(self):
+        return self.__get_index('ISO 3166-1 3 Letter Code')
+
+    def __iter__(self):
+        return iter((c[self.__2li], c[self.__cni]) \
+            for c in self.__country_list)
+
+
+NSS_INFO_CHOICES = (
+    ('sfu', 'sfu'), 
+    ('sfu20', 'sfu20'),
+    ('rfc2307', 'rfc2307')
 )

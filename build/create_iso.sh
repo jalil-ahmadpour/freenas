@@ -21,8 +21,6 @@ main()
 
 	requires_root
 
-	# Keep in sync with os-base and nano_env.
-	IMGFILE="${NANO_OBJ}/$NANO_IMGNAME.img.xz"
 	TEMP_IMGFILE="${NANO_OBJ}/_.imgfile" # Scratch file for image
 
 	INSTALLER_FILES="$AVATAR_ROOT/build/nanobsd-cfg/Installer"
@@ -40,22 +38,9 @@ main()
 	#		 -b boot/cdboot ${ISODIR}"
 	MKISOFS_CMD="/usr/local/bin/grub-mkrescue -o ${OUTPUT} ${ISODIR} -- -volid ${CDROM_LABEL}"
 
-	if ! command -v mkisofs >/dev/null 2>&1; then
-		error "mkisofs not available.  Please install the sysutils/cdrtools port."
-	fi
-
-	if false; then
-	    # I don't think we need this any longer
-	if [ ! -f "${IMGFILE}" ]; then
-		error "Can't find image file (${IMGFILE}) for ${REVISION}, punting"
-	fi
-
-	IMG_SIZE=$(xz --list --robot "$IMGFILE" | awk '/^totals/ { print $5 }')
-	if [ "${IMG_SIZE:-0}" -le 0 ]
-	then
-		error "Image file (${IMGFILE}) is invalid/empty"
-	fi
-	fi
+	#if ! command -v mkisofs >/dev/null 2>&1; then
+	#	error "mkisofs not available.  Please install the sysutils/cdrtools port."
+	#fi
 
 	cleanup
 
@@ -75,7 +60,6 @@ main()
 
 	# copy /rescue and /boot from the image to the iso
 	tar -c -f - -C ${NANO_OBJ}/_.w --exclude boot/kernel-debug boot | tar -x -f - -C ${ISODIR}
-#	ln -f $IMGFILE $ISODIR/$NANO_LABEL-$NANO_ARCH_HUMANIZED.img.xz
 
 	(cd build/pc-sysinstall && make install DESTDIR=${INSTALLUFSDIR} NO_MAN=t)
 	rm -rf ${INSTALLUFSDIR}/usr/local
@@ -101,9 +85,9 @@ main()
 # Build packages here.
 
 	if [ -d ${NANO_OBJ}/_.packages/Packages ]; then
-	    mkdir -p ${NANO_OBJ}/_.isodir/FreeNAS
-	    cp -R ${NANO_OBJ}/_.packages/Packages ${NANO_OBJ}/_.isodir/FreeNAS
-	    cp ${NANO_OBJ}/_.packages/FreeNAS-MANIFEST ${NANO_OBJ}/_.isodir/FreeNAS-MANIFEST
+	    mkdir -p ${NANO_OBJ}/_.isodir/${NANO_LABEL}
+	    cp -R ${NANO_OBJ}/_.packages/Packages ${NANO_OBJ}/_.isodir/${NANO_LABEL}
+	    cp ${NANO_OBJ}/_.packages/${NANO_LABEL}-MANIFEST ${NANO_OBJ}/_.isodir/${NANO_LABEL}-MANIFEST
 	else
 		echo "Hey, where are the install filess?"
 	fi
@@ -136,11 +120,6 @@ main()
 	mkdir -p ${INSTALLUFSDIR}/conf/default/tmp
 	mkdir -p ${INSTALLUFSDIR}/conf/default/var
 	mkdir -p ${INSTALLUFSDIR}/tank
-
-#    echo "IMG_SIZE=\"${IMG_SIZE}\"" > \
-#        ${INSTALLUFSDIR}/etc/avatar_img_size.conf
-#    cp -p ${AVATAR_ROOT}/build/files/0005.verify_media_size.sh \
-#        "${INSTALLUFSDIR}/usr/local/pre-install/0005.verify_media_size.sh"
 
 	# XXX: tied too much to the host system to be of value in the
 	# installer code.
@@ -346,6 +325,7 @@ main()
 	cp -p ${AVATAR_ROOT}/build/files/grub.cfg.cdrom ${ISODIR}/boot/grub/grub.cfg
 	sed -i "" 's/%CDROM_LABEL%/'${CDROM_LABEL}'/'  ${ISODIR}/boot/loader.conf
 	sed -i "" 's/%CDROM_LABEL%/'${CDROM_LABEL}'/'  ${ISODIR}/boot/grub/grub.cfg
+	sed -i "" 's/%NANO_LABEL%/'${NANO_LABEL}'/' ${ISODIR}/boot/grub/grub.cfg
 	sed -i "" 's/%NANO_LABEL_LOWER%/'${NANO_LABEL_LOWER}'/'  ${ISODIR}/boot/loader.conf
 	cp -p ${AVATAR_ROOT}/build/files/mount.conf.cdrom ${ISODIR}/.mount.conf
 

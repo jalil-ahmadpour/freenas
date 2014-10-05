@@ -47,6 +47,7 @@ from freenasUI.freeadmin.models import (
 from freenasUI.middleware.notifier import notifier
 from freenasUI.services.exceptions import ServiceFailed
 from freenasUI.storage.models import Disk
+from freenasUI.system.models import Certificate
 
 log = logging.getLogger("services.forms")
 
@@ -162,27 +163,6 @@ class CIFS(Model):
             help_text=_("These parameters are added to [global] section of "
                 "smb.conf")
             )
-    cifs_srv_homedir_enable = models.BooleanField(
-        verbose_name=_("Enable home directories"),
-        help_text=_("Enable/disable home directories for samba user."),
-        default=False,
-    )
-    cifs_srv_homedir_browseable_enable = models.BooleanField(
-        verbose_name=_("Enable home directories browsing"),
-        help_text=_("Enable/disable home directories browsing for samba "
-            "user."),
-        default=False,
-    )
-    cifs_srv_homedir = PathField(
-            verbose_name=_("Home directories"),
-            blank=True,
-            )
-    cifs_srv_homedir_aux = models.TextField(
-            verbose_name=_("Homes auxiliary parameters"),
-            blank=True,
-            help_text=_("These parameters are added to [homes] section of "
-                "smb.conf")
-            )
     cifs_srv_unixext = models.BooleanField(
             verbose_name=_("Unix Extensions"),
             default=True,
@@ -259,8 +239,16 @@ class CIFS(Model):
     cifs_srv_obey_pam_restrictions = models.BooleanField(
            verbose_name=_("Obey pam restrictions"),
            default=True,
-           help_text=_("this parameter controls whether or not Samba"
-               "should obey PAM's account and session management directives")
+           help_text=_("This parameter controls whether or not Samba"
+               " should obey PAM's account and session management directives")
+           )
+    cifs_srv_bindip = models.CharField(
+           verbose_name=_("Bind IP Addresses"),
+           help_text=_("IP address(es) to bind to. If none specified, all"
+               " available interfaces that are up will be listened on."),
+           max_length=250,
+           blank=True,
+           null=True
            )
     cifs_SID = models.CharField(
            max_length=120,
@@ -444,7 +432,7 @@ class iSCSITargetGlobalConfiguration(Model):
         deletable = False
         menu_child_of = "services.ISCSI"
         icon_model = u"SettingsIcon"
-        nav_extra = {'type': 'iscsi'}
+        nav_extra = {'type': 'iscsi', 'order': -10}
         resource_name = 'services/iscsi/globalconfiguration'
 
 
@@ -635,6 +623,7 @@ class iSCSITargetAuthorizedInitiator(Model):
         icon_model = u"InitiatorIcon"
         icon_add = u"AddInitiatorIcon"
         icon_view = u"ViewAllInitiatorsIcon"
+        nav_extra = {'order': 0}
         resource_name = 'services/iscsi/authorizedinitiator'
 
     def __unicode__(self):
@@ -1225,10 +1214,6 @@ class FTP(Model):
             verbose_name=_("TLS export standard vars"),
             default=False
             )
-    ftp_tls_opt_use_implicit_ssl = models.BooleanField(
-            verbose_name=_("TLS use implicit SSL"),
-            default=False
-            )
     ftp_tls_opt_dns_name_required = models.BooleanField(
             verbose_name=_("TLS DNS name required"),
             default=False
@@ -1237,11 +1222,12 @@ class FTP(Model):
             verbose_name=_("TLS IP address required"),
             default=False
             )
-    ftp_ssltls_certfile = models.TextField(
-            verbose_name=_("Certificate and private key"),
+    ftp_ssltls_certificate = models.ForeignKey(
+            Certificate,
+            verbose_name=_("Certificate"),
+            on_delete=models.SET_NULL,
             blank=True,
-            help_text=_("Place the contents of your certificate and private "
-                "key here.")
+            null=True
             )
     ftp_options = models.TextField(
             max_length=120,

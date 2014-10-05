@@ -24,7 +24,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 #####################################################################
-
+from collections import OrderedDict
 import cPickle as pickle
 import json
 import logging
@@ -34,7 +34,6 @@ import shutil
 import signal
 import socket
 import subprocess
-import sys
 import sysctl
 import time
 import urllib
@@ -53,11 +52,24 @@ from django.shortcuts import render
 from django.utils.translation import ugettext as _
 from django.views.decorators.cache import never_cache
 
-from freenasOS.Update import CheckForUpdates, Update
+from freenasOS.Update import (
+    ActivateClone,
+    CheckForUpdates,
+    DeleteClone,
+    Update,
+)
 from freenasUI.account.models import bsdUsers
 from freenasUI.common.locks import mntlock
-from freenasUI.common.system import get_sw_name, get_sw_version, send_mail
+from freenasUI.common.system import (
+    get_sw_name,
+    get_sw_version,
+    send_mail
+)
 from freenasUI.common.pipesubr import pipeopen
+from freenasUI.common.ssl import (
+    export_certificate,
+    export_privatekey,
+)
 from freenasUI.freeadmin.apppool import appPool
 from freenasUI.freeadmin.views import JsonResp
 from freenasUI.middleware.exceptions import MiddlewareError
@@ -70,7 +82,7 @@ from freenasUI.system.utils import CheckUpdateHandler, UpdateHandler
 GRAPHS_DIR = '/var/db/graphs'
 VERSION_FILE = '/etc/version'
 PGFILE = '/tmp/.extract_progress'
-DDFILE = '/tmp/.upgrade_dd'
+INSTALLFILE = '/tmp/.upgrade_install'
 RE_DD = re.compile(r"^(\d+) bytes", re.M | re.S)
 PERFTEST_SIZE = 40 * 1024 * 1024 * 1024  # 40 GiB
 
@@ -114,6 +126,146 @@ def system_info(request):
     sysinfo = _system_info(request)
     sysinfo['info_hook'] = appPool.get_system_info(request)
     return render(request, 'system/system_info.html', sysinfo)
+
+
+def bootenv_datagrid(request):
+    return render(request, 'system/bootenv_datagrid.html', {
+        'actions_url': reverse('system_bootenv_datagrid_actions'),
+        'resource_url': reverse('api_dispatch_list', kwargs={
+            'api_name': 'v1.0',
+            'resource_name': 'system/bootenv',
+        }),
+        'structure_url': reverse('system_bootenv_datagrid_structure'),
+    })
+
+
+def bootenv_datagrid_actions(request):
+    onclick = '''function() {
+    var mybtn = this;
+    for (var i in grid.selection) {
+        var data = grid.row(i).data;
+        editObject('%s', data.%s, [mybtn,]);
+    }
+}'''
+
+    onselectafter = '''function(evt, actionName, action) {
+    for(var i=0;i < evt.rows.length;i++) {
+        var row = evt.rows[i];
+        if(%s) {
+            query(".grid" + actionName).forEach(function(item, idx) {
+                domStyle.set(item, "display", "none");
+            });
+            break;
+        }
+     }
+}'''
+    actions = {
+        _('Clone'): {
+            'on_click': onclick % (_('Clone'), '_add_url'),
+            'button_name': _('Clone'),
+        },
+        _('Delete'): {
+            'on_click': onclick % (_('Delete'), '_delete_url'),
+            'button_name': _('Delete'),
+        },
+        _('Activate'): {
+            'on_click': onclick % (_('Activate'), '_activate_url'),
+            'on_select_after': onselectafter % (
+                'row.data._activate_url === undefined'
+            ),
+            'button_name': _('Activate'),
+        },
+        _('Rename'): {
+            'on_click': onclick % (_('Rename'), '_rename_url'),
+            'button_name': _('Rename'),
+        },
+    }
+    return HttpResponse(
+        json.dumps(actions),
+        content_type='application/json',
+    )
+
+
+def bootenv_datagrid_structure(request):
+    structure = OrderedDict((
+        ('name', {'label': _('Name')}),
+        ('active', {'label': _('Active')}),
+        ('created', {'label': _('Created')}),
+    ))
+    return HttpResponse(
+        json.dumps(structure),
+        content_type='application/json',
+    )
+
+
+def bootenv_activate(request, name):
+    if request.method == 'POST':
+        active = ActivateClone(name)
+        if active is not False:
+            return JsonResp(
+                request,
+                message=_('Boot Environment successfully activated.'),
+            )
+        return JsonResp(
+            request,
+            message=_('Failed to activate Boot Environment.'),
+        )
+    return render(request, 'system/bootenv_activate.html', {
+        'name': name,
+    })
+
+
+def bootenv_add(request, source=None):
+    if request.method == 'POST':
+        form = forms.BootEnvAddForm(request.POST, source=source)
+        if form.is_valid():
+            form.save()
+            return JsonResp(
+                request,
+                message=_('Boot Environment successfully added.'),
+            )
+        return JsonResp(request, form=form)
+    else:
+        form = forms.BootEnvAddForm(source=source)
+    return render(request, 'system/bootenv_add.html', {
+        'form': form,
+        'source': source,
+    })
+
+
+def bootenv_delete(request, name):
+    if request.method == 'POST':
+        delete = DeleteClone(name)
+        if delete is not False:
+            return JsonResp(
+                request,
+                message=_('Boot Environment successfully deleted.'),
+            )
+        return JsonResp(
+            request,
+            message=_('Failed to delete Boot Environment.'),
+        )
+    return render(request, 'system/bootenv_delete.html', {
+        'name': name,
+    })
+
+
+def bootenv_rename(request, name):
+    if request.method == 'POST':
+        form = forms.BootEnvRenameForm(request.POST, name=name)
+        if form.is_valid():
+            form.save()
+            return JsonResp(
+                request,
+                message=_('Boot Environment successfully renamed.'),
+            )
+        return JsonResp(request, form=form)
+    else:
+        form = forms.BootEnvRenameForm(name=name)
+    return render(request, 'system/bootenv_rename.html', {
+        'form': form,
+        'name': name,
+    })
 
 
 def config_restore(request):
@@ -330,18 +482,35 @@ def testmail(request):
         kwargs = dict(instance=models.Email.objects.order_by('-id')[0])
     except IndexError:
         kwargs = {}
-    form = forms.EmailForm(request.POST, **kwargs)
+
+    fromwizard = False
+    data = request.POST.copy()
+    for key, value in data.items():
+        if key.startswith('system-'):
+            fromwizard = True
+            data[key.replace('system-', '')] = value
+
+    form = forms.EmailForm(data, **kwargs)
     if not form.is_valid():
         return JsonResp(request, form=form)
 
-    email = bsdUsers.objects.get(bsdusr_username='root').bsdusr_email
+    if fromwizard:
+        allfield = 'system-__all__'
+    else:
+        allfield = '__all__'
+
+    if fromwizard:
+        email = request.POST.get('system-sys_email')
+        errmsg = _('You must provide a Root E-mail')
+    else:
+        email = bsdUsers.objects.get(bsdusr_username='root').bsdusr_email
+        errmsg = _('You must configure the root email (Accounts->Users->root)')
     if not email:
+        form.errors[allfield] = form.error_class([errmsg])
+
         return JsonResp(
             request,
-            error=True,
-            message=_(
-                "You must configure the root email (Accounts->Users->root)"
-            ),
+            form=form,
         )
 
     sid = transaction.savepoint()
@@ -350,17 +519,21 @@ def testmail(request):
     error = False
     if request.is_ajax():
         sw_name = get_sw_name()
-        error, errmsg = send_mail(subject=_('Test message from %s'
-                                            % (sw_name)),
-                                  text=_('This is a message test from %s'
-                                         % (sw_name, )))
+        error, errmsg = send_mail(
+            subject=_('Test message from %s') % sw_name,
+            text=_('This is a message test from %s') % sw_name,
+            to=[email])
     if error:
         errmsg = _("Your test email could not be sent: %s") % errmsg
     else:
         errmsg = _('Your test email has been sent!')
     transaction.savepoint_rollback(sid)
 
-    return JsonResp(request, error=error, message=errmsg)
+    form.errors[allfield] = form.error_class([errmsg])
+    return JsonResp(
+        request,
+        form=form,
+    )
 
 
 class DojoFileStore(object):
@@ -372,7 +545,7 @@ class DojoFileStore(object):
             self.mp = [
                 os.path.abspath(mp.mp_path.encode('utf8'))
                 for mp in MountPoint.objects.filter(
-                    mp_volume__vol_fstype__in=('ZFS', 'UFS')
+                    mp_volume__vol_fstype='ZFS'
                 )
             ]
 
@@ -479,7 +652,7 @@ def file_browser(request, path='/'):
     return HttpResponse(content, content_type='application/json')
 
 
-def firmware_progress(request):
+def manualupdate_progress(request):
 
     data = {}
     if os.path.exists(PGFILE):
@@ -493,27 +666,11 @@ def firmware_progress(request):
                     data['percent'] = int(percent)
                 else:
                     data['indeterminate'] = True
-    elif os.path.exists(DDFILE):
-        with open(DDFILE, 'r') as f:
-            pid = f.readline()
-            if pid:
-                pid = int(pid.strip())
-        try:
-            os.kill(pid, signal.SIGINFO)
-            time.sleep(0.5)
-            with open(DDFILE, 'r') as f2:
-                line = f2.read()
-            reg = RE_DD.findall(line)
-            if reg:
-                current = int(reg[-1])
-                size = os.stat("/var/tmp/firmware/firmware.img").st_size
-                percent = int((float(current) / size) * 100)
-                data = {
-                    'step': 3,
-                    'percent': percent,
-                }
-        except OSError:
-            pass
+    elif os.path.exists(INSTALLFILE):
+        data = {
+            'step': 3,
+            'indeterminate': True,
+        }
 
     content = json.dumps(data)
     return HttpResponse(content, content_type='application/json')
@@ -845,12 +1002,13 @@ def upgrade(request):
                         install_handler=handler.install_handler,
                     )
                 except Exception, e:
-                    #FIXME: error handling
-                    pass
+                    handler.error = unicode(e)
                 handler.finished = True
                 handler.dump()
-                #os.kill(handler.pid, 15)
+                os.kill(handler.pid, 9)
         else:
+            if handler.error is not False:
+                raise MiddlewareError(handler.error)
             if not handler.finished:
                 return HttpResponse(handler.uuid, status=202)
             handler.exit()
@@ -874,3 +1032,309 @@ def upgrade_progress(request):
         json.dumps(handler.load()),
         content_type='application/json',
     )
+
+
+def CA_import(request):
+
+    if request.method == "POST":
+        form = forms.CertificateAuthorityImportForm(request.POST)
+        if form.is_valid():
+            m = form.save()
+            return JsonResp(
+                request,
+                message=_("Certificate Authority successfully imported.")
+            )
+
+    else:
+        form = forms.CertificateAuthorityImportForm()
+
+    return render(request, "system/certificate/CA_import.html", {
+        'form': form
+    })
+
+
+def CA_create_internal(request):
+
+    if request.method == "POST":
+        form = forms.CertificateAuthorityCreateInternalForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return JsonResp(
+                request,
+                message=_("Internal Certificate Authority successfully created.")
+            )
+
+    else:
+        form = forms.CertificateAuthorityCreateInternalForm()
+
+    return render(request, "system/certificate/CA_create_internal.html", {
+        'form': form
+    })
+
+
+def CA_create_intermediate(request):
+
+    if request.method == "POST":
+        form = forms.CertificateAuthorityCreateIntermediateForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return JsonResp(
+                request,
+                message=_("Intermediate Certificate Authority successfully created.")
+            )
+
+    else:
+        form = forms.CertificateAuthorityCreateIntermediateForm()
+
+    return render(request, "system/certificate/CA_create_intermediate.html", {
+        'form': form
+    })
+
+
+def CA_edit(request, id):
+
+    ca = models.CertificateAuthority.objects.get(pk=id)
+
+    if request.method == "POST":
+        form = forms.CertificateAuthorityEditForm(request.POST, instance=ca)
+        if form.is_valid():
+            m = form.save()
+            return JsonResp(
+                request,
+                message=_("Certificate Authority successfully edited.")
+            )
+
+    else:
+        form = forms.CertificateAuthorityEditForm(instance=ca)
+
+    return render(request, "system/certificate/CA_edit.html", {
+        'form': form
+    })
+
+def buf_generator(buf):
+    for line in buf:
+        yield line
+
+def CA_export_certificate(request, id):
+    ca = models.CertificateAuthority.objects.get(pk=id)
+    cert = export_certificate(ca.cert_certificate)
+
+    response = StreamingHttpResponse(
+        buf_generator(cert), content_type='application/octet-stream'
+    )
+    response['Content-Length'] = len(cert)
+    response['Content-Disposition'] = 'attachment; filename=%s.crt' % ca
+
+    return response
+
+
+def CA_export_privatekey(request, id):
+    ca = models.CertificateAuthority.objects.get(pk=id)
+    key = export_privatekey(ca.cert_privatekey)
+
+    response = StreamingHttpResponse(
+        buf_generator(key), content_type='application/octet-stream'
+    )
+    response['Content-Length'] = len(key)
+    response['Content-Disposition'] = 'attachment; filename=%s.key' % ca
+
+    return response
+
+
+def certificate_import(request):
+
+    if request.method == "POST":
+        form = forms.CertificateImportForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return JsonResp(
+                request,
+                message=_("Certificate successfully imported.")
+            )
+
+    else:
+        form = forms.CertificateImportForm()
+
+    return render(request, "system/certificate/certificate_import.html", {
+        'form': form
+    })
+
+
+def certificate_create_internal(request):
+
+    if request.method == "POST":
+        form = forms.CertificateCreateInternalForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return JsonResp(
+                request,
+                message=_("Internal Certificate successfully created.")
+            )
+
+    else:
+        form = forms.CertificateCreateInternalForm()
+
+    return render(request, "system/certificate/certificate_create_internal.html", {
+        'form': form
+    })
+
+
+def certificate_create_CSR(request):
+
+    if request.method == "POST":
+        form = forms.CertificateCreateCSRForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return JsonResp(
+                request,
+                message=_("Certificate CSR successfully created.")
+            )
+
+    else:
+        form = forms.CertificateCreateCSRForm()
+
+    return render(request, "system/certificate/certificate_create_CSR.html", {
+        'form': form
+    })
+
+
+def certificate_edit(request, id):
+
+    cert = models.Certificate.objects.get(pk=id)
+
+    if request.method == "POST":
+        form = forms.CertificateEditForm(request.POST, instance=cert)
+        if form.is_valid():
+            form.save()
+            return JsonResp(
+                request,
+                message=_("Internal Certificate successfully edited.")
+            )
+
+    else:
+        form = forms.CertificateEditForm(instance=cert)
+
+    return render(request, "system/certificate/certificate_edit.html", {
+        'form': form
+    })
+
+
+def CSR_edit(request, id):
+
+    cert = models.Certificate.objects.get(pk=id)
+
+    if request.method == "POST":
+        form = forms.CertificateCSREditForm(request.POST, instance=cert)
+        if form.is_valid():
+            form.save()
+            return JsonResp(
+                request,
+                message=_("CSR successfully edited.")
+            )
+
+    else:
+        form = forms.CertificateCSREditForm(instance=cert)
+
+    return render(request, "system/certificate/CSR_edit.html", {
+        'form': form
+    })
+
+
+def certificate_export_certificate(request, id):
+    c = models.Certificate.objects.get(pk=id)
+    cert = export_certificate(c.cert_certificate)
+
+    response = StreamingHttpResponse(
+        buf_generator(cert), content_type='application/octet-stream'
+    )
+    response['Content-Length'] = len(cert)
+    response['Content-Disposition'] = 'attachment; filename=%s.crt' % c
+
+    return response
+
+
+def certificate_export_privatekey(request, id):
+    c = models.Certificate.objects.get(pk=id)
+    key = export_privatekey(c.cert_privatekey)
+
+    response = StreamingHttpResponse(
+        buf_generator(key), content_type='application/octet-stream'
+    )
+    response['Content-Length'] = len(key)
+    response['Content-Disposition'] = 'attachment; filename=%s.key' % c
+
+    return response
+
+
+# Need to figure this one out...
+def certificate_export_certificate_and_privatekey(request, id):
+    c = models.Certificate.objects.get(pk=id)
+
+    cert = export_certificate(c.cert_certificate)
+    key = export_privatekey(c.cert_privatekey)
+
+    response = StreamingHttpResponse(
+        buf_generator(combined), content_type='application/octet-stream'
+    )
+    response['Content-Length'] = len(combined)
+    response['Content-Disposition'] = 'attachment; filename=%s.p12' % c
+
+    return response
+
+
+def certificate_to_json(certtype):
+    try:
+        data = {
+            'cert_root_path':  certtype.cert_root_path,
+            'cert_type': certtype.cert_type,
+            'cert_certificate': certtype.cert_certificate,
+            'cert_privatekey': certtype.cert_privatekey,
+            'cert_CSR': certtype.cert_CSR,
+            'cert_key_length': certtype.cert_key_length,
+            'cert_digest_algorithm': certtype.cert_digest_algorithm,
+            'cert_lifetime': certtype.cert_lifetime,
+            'cert_country': certtype.cert_country,
+            'cert_state': certtype.cert_state,
+            'cert_city': certtype.cert_city,
+            'cert_organization': certtype.cert_organization,
+            'cert_email': certtype.cert_email,
+            'cert_serial': certtype.cert_serial,
+            'cert_internal': certtype.cert_internal,
+            'cert_certificate_path': certtype.cert_certificate_path,
+            'cert_privatekey_path': certtype.cert_privatekey_path,
+            'cert_CSR_path': certtype.cert_CSR_path,
+            'cert_issuer': certtype.cert_issuer,
+            'cert_ncertificates': certtype.cert_ncertificates,
+            'cert_DN': certtype.cert_DN,
+            'cert_from': certtype.cert_from,
+            'cert_until': certtype.cert_until,
+            'cert_type_existing': certtype.cert_type_existing,
+            'cert_type_internal': certtype.cert_type_internal,
+            'cert_type_CSR': certtype.cert_type_CSR,
+            'CA_type_existing': certtype.CA_type_existing,
+            'CA_type_internal': certtype.CA_type_internal,
+            'CA_type_intermediate': certtype.CA_type_intermediate,
+        }
+
+    except Exception as e:
+        log.debug("certificate_to_json: caught exception: '%s'", e)
+
+    try:
+        data['cert_signedby'] = "%s" % certtype.cert_signedby
+    except:
+        data['cert_signedby'] = None
+
+    content = json.dumps(data)
+    return HttpResponse(content, content_type='application/json')
+
+
+def CA_info(request, id):
+    return certificate_to_json(
+        models.CertificateAuthority.objects.get(pk=int(id))
+    ) 
+
+
+def certificate_info(request, id):
+    return certificate_to_json(
+        models.Certificate.objects.get(pk=int(id))
+    ) 

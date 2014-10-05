@@ -47,13 +47,8 @@
 #	OPENSSL settings
 #
 : ${OPENSSL:="/usr/bin/openssl"}
-: ${SSLDIR:="/etc/ssl/freenas"}
-: ${SSLCONF:="${SSLDIR}/openssl.conf"}
+: ${SSLDIR:="/etc/certificates"}
 : ${SSLCADIR:="${SSLDIR}/CA"}
-: ${SSLCACERTDIR:="${SSLCADIR}/certs"}
-: ${SSLCAPRIVDIR:="${SSLCADIR}/private"}
-: ${SSLCACERT:="${SSLCADIR}/cacert.crt"}
-: ${SSLCAKEY:="${SSLCAPRIVDIR}/cakey.key"}
 
 #
 #	HTTPD settings
@@ -62,18 +57,8 @@
 : ${HTTPDDIR:="/usr/local/etc/nginx"}
 : ${HTTPDSCRIPT:="/usr/local/etc/rc.d/nginx"}
 : ${HTTPDCONF:="${HTTPDDIR}/nginx.conf"}
-: ${HTTPDSSLDIR:="${SSLDIR}/nginx"}
-: ${HTTPDKEY:="${HTTPDSSLDIR}/nginx.key"}
-: ${HTTPDCERT:="${HTTPDSSLDIR}/nginx.crt"}
 : ${HTTPDSSLPORT:="443"}
 : ${HTTPDPORT:="80"}
-
-#
-#	FTPD settings
-#
-: ${FTPDSSLDIR:="${SSLDIR}/proftpd"}
-: ${FTPDKEY:="${FTPDSSLDIR}/proftpd.key"}
-: ${FTPDCERT:="${FTPDSSLDIR}/proftpd.crt"}
 
 #
 #	Misc settings
@@ -85,14 +70,9 @@
 #
 #	LDAP settings
 #
-: ${NSS_LDAP_CONF:="/usr/local/etc/nss_ldap.conf"}
-: ${NSS_LDAP_SECRET:="/usr/local/etc/nss_ldap.secret"}
+: ${SSSD_CONF:="/usr/local/etc/sssd/sssd.conf"}
 : ${LDAP_CONF:="/usr/local/etc/openldap/ldap.conf"}
 : ${CERT_FILE:="/usr/local/etc/certs/cacert.crt"}
-: ${LDAPSSLDIR:="${SSLDIR}/ldap"}
-: ${LDAPKEY:="${LDAPSSLDIR}/ldap.key"}
-: ${LDAPCERT:="${LDAPSSLDIR}/ldap.crt"}
-: ${LDAPCACERT:="${LDAPSSLDIR}/ldapca.crt"}
 : ${LDAP_TIMEOUT:="0"}
 
 #
@@ -402,7 +382,8 @@ jail_get_ipv4()
 		return 1
 	fi
 
-	${WARDEN} list -v "${name}"|awk '/^ipv4:/ { print $2 }'
+	${WARDEN} list -v "${name}" | \
+            awk '/^ipv4:/ { print $2 }'|sed -E 's|DHCP:||'
 	return $?
 }
 
@@ -415,7 +396,8 @@ jail_get_alias_ipv4()
 		return 1
 	fi
 
-	${WARDEN} list -v "${name}"|grep -E '^alias-ipv4:'|cut -f2 -d:|sed -E 's|^ +||'
+	${WARDEN} list -v "${name}" | \
+            grep -E '^alias-ipv4:'|cut -f2 -d:|sed -E 's|^ +||'
 	return $?
 }
 
@@ -441,7 +423,8 @@ jail_get_alias_bridge_ipv4()
 		return 1
 	fi
 
-	${WARDEN} list -v "${name}"|grep -E '^alias-bridge-ipv4:'|cut -f2 -d:|sed -E 's|^ +||'
+	${WARDEN} list -v "${name}" | \
+            grep -E '^alias-bridge-ipv4:'|cut -f2 -d:|sed -E 's|^ +||'
 	return $?
 }
 
@@ -454,7 +437,8 @@ jail_get_defaultrouter_ipv4()
 		return 1
 	fi
 
-	${WARDEN} list -v "${name}"|awk '/^defaultrouter-ipv4:/ { print $2 }'
+	${WARDEN} list -v "${name}" | \
+            awk '/^defaultrouter-ipv4:/ { print $2 }'|sed -E 's|DHCP:||'
 	return $?
 }
 
@@ -467,7 +451,8 @@ jail_get_ipv6()
 		return 1
 	fi
 
-	${WARDEN} list -v "${name}"|awk '/^ipv6:/ { print $2 }'
+	${WARDEN} list -v "${name}" | \
+            awk '/^ipv6:/ { print $2 }'|sed -E 's|AUTOCONF:||'
 	return $?
 }
 
@@ -480,7 +465,8 @@ jail_get_alias_ipv6()
 		return 1
 	fi
 
-	${WARDEN} list -v "${name}"|grep -E '^alias-ipv6:'|cut -f2 -d:|sed -E 's|^ +||'
+	${WARDEN} list -v "${name}" | \
+            grep -E '^alias-ipv6:'|cut -f2 -d:|sed -E 's|^ +||'
 	return $?
 }
 
@@ -506,7 +492,8 @@ jail_get_alias_bridge_ipv6()
 		return 1
 	fi
 
-	${WARDEN} list -v "${name}"|grep -E '^alias-bridge-ipv6:'|cut -f2 -d:|sed -E 's|^ +||'
+	${WARDEN} list -v "${name}" | \
+            grep -E '^alias-bridge-ipv6:'|cut -f2 -d:|sed -E 's|^ +||'
 	return $?
 }
 
@@ -519,7 +506,8 @@ jail_get_defaultrouter_ipv6()
 		return 1
 	fi
 
-	${WARDEN} list -v "${name}"|awk '/^defaultrouter-ipv6:/ { print $2 }'
+	${WARDEN} list -v "${name}" | \
+            awk '/^defaultrouter-ipv6:/ { print $2 }'|sed -E 's|AUTOCONF:||'
 	return $?
 }
 
