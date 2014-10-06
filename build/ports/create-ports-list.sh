@@ -44,4 +44,4 @@ rm -f ${PORTSLIST}
 rm -f ${MAKECONF}
 
 . ${AVATAR_ROOT}/build/nanobsd-cfg/os-ports
-
+. ${AVATAR_ROOT}/build/nanobsd-cfg/os-ports-sadr

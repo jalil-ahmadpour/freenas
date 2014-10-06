@@ -43,6 +43,10 @@ a:hover {
     padding-bottom:2px !important;
     font-size: 7pt;
 }
+.claro .dijitDialogCloseIcon {
+    float: right;
+    position: static;
+}
 /* system->settings->config */
 .configbtn {
     float:left;
@@ -56,7 +60,7 @@ a:hover {
 #rebootDialog_underlay {
     background-color:#000;
 }
-#shutdownDialog_underlay,#editscary_dialog_underlay {
+#shutdownDialog_underlay,#editscary_dialog_underlay,#editconfirmscary_dialog_underlay {
     background-color:#FD0000;
 }
 #top_dialog_underlay {
@@ -165,17 +169,14 @@ pre.message {
     opacity:0.6;
     filter:alpha(opacity=18);
 }
-
-.success p {
-    padding-top:18px;
-    color:#fff;
-}
-
 .error p {
     padding-top:18px;
     color:#fff;
 }
-
+.success p {
+    padding-top:18px;
+    color:#fff;
+}
 .dijitTooltipContainer {
     max-width:250px;
     margin-top:10px;
@@ -303,7 +304,7 @@ tr.odd:hover {
     padding-left:0px;
     text-decoration:bold;
 }
-table.form th {
+table.form tbody > tr > th {
     color:#50575F;
     background:#f5f5f5;
     padding:6px;
@@ -326,8 +327,6 @@ table.grid tr {
     border-bottom:1px #ccc solid;
 }
 
-<<<<<<< HEAD
-=======
 .BootIcon {
     background-image:url('/static/images/ui/tree/boot.png');
     width:16px;
@@ -335,20 +334,19 @@ table.grid tr {
 }
 .EmailIcon {
     background-image:url('/static/images/ui/tree/email.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .LLDPIcon {
     background-image:url('/static/images/ui/tree/lldp.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .SysDatasetIcon {
     background-image:url('/static/images/ui/tree/sysdataset.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
->>>>>>> upstream/master
 .SystemIcon {
     background-image:url('/static/images/ui/tree/system.png');
     width:32px;
@@ -366,6 +364,11 @@ table.grid tr {
 }
 .SettingsIcon {
     background-image:url('/static/images/ui/tree/settings.png');
+    width:32px;
+    height:32px;
+}
+.TasksIcon {
+    background-image:url('/static/images/ui/tree/tasks.png');
     width:32px;
     height:32px;
 }
@@ -396,6 +399,11 @@ table.grid tr {
 }
 .AddInterfaceIcon {
     background-image:url('/static/images/ui/tree/add_interfaces.png');
+    width:32px;
+    height:32px;
+}
+.UpgradeIcon {
+    background-image:url('/static/images/ui/tree/upgrade.png');
     width:32px;
     height:32px;
 }
@@ -531,6 +539,16 @@ table.grid tr {
 }
 .LDAPIcon {
     background-image:url('/static/images/ui/tree/ldap.png');
+    width:32px;
+    height:32px;
+}
+.KerberosRealmIcon {
+    background-image:url('/static/images/ui/tree/kerberos_realm.png');
+    width:32px;
+    height:32px;
+}
+.KerberosKeytabIcon {
+    background-image:url('/static/images/ui/tree/kerberos_keytab.png');
     width:32px;
     height:32px;
 }
@@ -694,6 +712,25 @@ table.grid tr {
     width:32px;
     height:32px;
 }
+
+.WebDAVShareIcon {
+    background-image:url('/static/images/ui/tree/webdav.png');
+    width:32px;
+    height:32px;
+}
+
+.AddWebDAVShareIcon {
+    background-image:url('/static/images/ui/tree/add_webdav_share.png');
+    width:32px;
+    height:32px;
+}
+
+.ViewAllWebDAVSharesIcon {
+    background-image:url('/static/images/ui/tree/view_all_webdav_shares.png');
+    width:32px;
+    height:32px;
+}
+
 .TargetExtentIcon {
     background-image:url('/static/images/ui/tree/target_extents.png');
     width:32px;
@@ -900,7 +937,7 @@ table.grid tr {
     height:32px;
 }
 .TunableIcon {
-    background-image:url('/static/images/ui/tree/Tunable.png');
+    background-image:url('/static/images/ui/tree/Tunable_16x32px.png');
     width:32px;
     height:32px;
 }
@@ -915,7 +952,7 @@ table.grid tr {
     height:32px;
 }
 .NTPServerIcon {
-    background-image:url('/static/images/ui/tree/NTP_Servers.png');
+    background-image:url('/static/images/ui/tree/NTP_Servers_16x32px.png');
     width:32px;
     height:32px;
 }
@@ -926,21 +963,6 @@ table.grid tr {
 }
 .ViewNTPServerIcon {
     background-image:url('/static/images/ui/tree/view_ntp_servers.png');
-    width:32px;
-    height:32px;
-}
-.SysctlIcon {
-    background-image:url('/static/images/ui/tree/sysctls.png');
-    width:32px;
-    height:32px;
-}
-.AddSysctlIcon {
-    background-image:url('/static/images/ui/tree/add_sysctls.png');
-    width:32px;
-    height:32px;
-}
-.ViewSysctlIcon {
-    background-image:url('/static/images/ui/tree/view_sysctls.png');
     width:32px;
     height:32px;
 }
@@ -960,7 +982,7 @@ table.grid tr {
     height:32px;
 }
 .ShellIcon {
-    background-image:url('/static/images/ui/tree/shell.png');
+    background-image:url('/static/images/ui/tree/16x16_shell.png');
     width:32px;
     height:32px;
 }
@@ -1069,20 +1091,26 @@ table.grid tr {
     width:32px;
     height:32px;
 }
-<<<<<<< HEAD
-
-=======
+.SystemDatasetIcon {
+    background-image:url('/static/images/ui/tree/system_dataset.png');
+    width:32px;
+    height:32px;
+}
+.WizardIcon {
+    background-image:url('/static/images/ui/tree/wizard.png');
+    width:32px;
+    height:32px;
+}
 .CertificateAuthorityIcon {
     background-image:url('/static/images/ui/tree/certificate_authority.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
 .CertificateIcon {
     background-image:url('/static/images/ui/tree/certificate.png');
-    width:16px;
-    height:16px;
+    width:32px;
+    height:32px;
 }
->>>>>>> upstream/master
 .dijitTextArea {
     min-height:60px;
 }
@@ -1240,6 +1268,7 @@ span.shell_bf {
 /* Negative bg */
 #msg_output {
     display:none;
+    word-wrap: break-word;
 }
 #navMenu {
     position:relative;
@@ -1374,4 +1403,8 @@ table.layoutTable > tr:first-child > td {
 }
 #dgrid_apiclient .dgrid-column-name {
     width: 140px;
+}
+
+.dgrid-wizardshare {
+    height: 100px !important;
 }

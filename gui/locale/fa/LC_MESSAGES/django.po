@@ -6831,10 +6831,9 @@ msgstr "برای این ولیوم یک اسکراب از قبل وجود دار
 #~ msgid "Disable password"
 #~ msgstr "غیرفعالسازی گذرواژه"
 
-<<<<<<< HEAD
 #~ msgid "Time in milliseconds"
 #~ msgstr "زمان به میلی‌ثانیه"
-=======
+
 #: templates/system/initialwizard_import.html:31
 msgid "Skip"
 msgstr ""
@@ -7601,4 +7600,3 @@ msgstr ""
 #: system/views.py:504
 msgid "You must provide a Root E-mail"
 msgstr ""
->>>>>>> upstream/master

@@ -63,6 +63,8 @@ move_data()
 select_httpd ( )
 {
 	echo 'nginx_enable="YES"' >> ${NANO_WORLDDIR}/etc/rc.conf
+	echo 'mysql_enable="YES"' >> ${NANO_WORLDDIR}/etc/rc.conf
+	echo 'php_fpm_enable="YES"' >> ${NANO_WORLDDIR}/etc/rc.conf
 }
 
 remove_patch_divots ( )

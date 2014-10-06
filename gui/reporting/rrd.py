@@ -120,7 +120,7 @@ class RRDBase(object):
             "/usr/local/bin/rrdtool",
             "graph",
             path,
-			'--watermark','سپاه پاسداران انقلاب اسلامي-مركز تحقيقات صدر',
+			'--watermark','مرکز صدر',
 			#'--font','DEFAULT:0:Tahoma',
             '--color','BACK#E8F5FD',
 			'--color','SHADEA#8ACAFD',
